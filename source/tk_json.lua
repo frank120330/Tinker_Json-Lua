@@ -20,8 +20,7 @@ TkJson.typeCode = {
   eObject = 8
 }
 
-TkJson._currentType = TkJson.typeCode.eValue
-TkJson._value = nil
+TkJson.typeStack = {}
 
 local nullIndex = 1
 TkJson.parseNull = function(ch)
@@ -47,7 +46,7 @@ end
 TkJson.parseValue = function(ch)
   local parseResult = eOk
   local parseValue = nil
-  if TkJson._currentType == TkJson.typeCode.eValue then
+  if #TkJson.typeStack == 0 then
     if ch == 'n' then
       TkJson._currentType = TkJson.typeCode.eNull
       parseResult, parseValue = TkJson.parseNull(ch)
