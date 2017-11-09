@@ -8,6 +8,13 @@ TkJson.errorCode = {
   eRootNotSingular = 4
 }
 
+
+TkJson.parserResult = TkJson.errorCode.eExpectValue
+TkJson.parserValue = nil
+
+TkJson.typeStack = {}
+TkJson.parserStack = {}
+
 TkJson.typeCode = {
   eEmpty = 0,
   eWhitespace = 1,
@@ -19,8 +26,6 @@ TkJson.typeCode = {
   eArray = 7,
   eObject = 8
 }
-
-TkJson.typeStack = {}
 
 local nullIndex = 1
 TkJson.parseNull = function(ch)
@@ -77,16 +82,23 @@ TkJson.parseValue = function(ch)
   return parseResult, parseValue
 end 
 
+TkJson.parseWhitespace = function(ch)
+end
+
+TkJson.parseChar = function(ch)
+
+
 TkJson.parse = function(jsonString)
-  local parseResult = TkJson.errorCode.eExpectValue
-  local parseValue = nil
+  local whitespaceParser = coroutine.create(TkJson.parseWhitespace)
+  
   for ch in string.gmatch(jsonString, utf8.charpattern) do
-    parseResult, parseValue = TkJson.parseValue(ch)
-    if parseResult ~= TkJson.errorCode.eOk then
+    print(ch)
+    TkJson.parserResult = TkJson.parseChar(ch)
+    if TkJson.parserResult ~= TkJson.errorCode.eOk then
       break
     end
   end
-  return parseResult, parseValue
+  return TkJson.parserResult, TkJson.parserValue
 end
 
 return TkJson
