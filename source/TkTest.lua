@@ -2,10 +2,8 @@ local TkTest = {}
 
 TkTest.expectEqual = function(equality, expect, actual, format)
   if not equality then
-    local errorMsg = string.format(
-      '> Test Failure - Expect: ' .. format .. ', Actual: ' .. format, 
-      expect, actual
-    )
+    local template = string.format('> Test Failure - Expect: %s, Actual: %s', format, format)
+    local errorMsg = string.format(template, expect, actual)
     error(errorMsg)
   end
 end
@@ -23,6 +21,11 @@ end
 TkTest.expectEqualNumber = function(expect, actual)
   local equality = (expect == actual)
   TkTest.expectEqual(equality, expect, actual, '%f')
+end
+
+TkTest.expectEqualString = function(expect, actual)
+  local equality = (expect == actual)
+  TkTest.expectEqual(equality, expect, actual, '%s')
 end
 
 return TkTest
