@@ -25,6 +25,12 @@ local TestString = function(str, json)
   TkTest.expectEqualString(str, value)
 end
 
+local TestArray = function(array, json)
+  local result, value = TkJson.parse(json)
+  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
+  TkTest.expectEqualArray(array, value)
+end
+
 local TestParseLiteral = function()
   TestLiteral(nil, 'null')
   TestLiteral(true, 'true')
@@ -112,6 +118,12 @@ local TestParseIllegalString = function()
   TestError(TkJson.errorCode.eInvalidStringEscape, '\"\\x12\"');
   TestError(TkJson.errorCode.eInvalidStringChar, '\"\x01\"');
   TestError(TkJson.errorCode.eInvalidStringChar, '\"\x1F\"');
+end
+
+local function TestParseArray()
+  TestArray({ nil, false, true, 123, 'abc' }, '[ null , false , true , 123 , \"abc\" ]')
+  TestArray({}, '[ ]')
+  TestArray({ {}, { 0 }, { 0, 1 }, { 0, 1, 2} }, '[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]')
 end
 
 local TestParse = function()
