@@ -8,7 +8,12 @@ TkJson.errorCode = {
   eExpectValue = 2,
   eInvalidValue = 3,
   eRootNotSingular = 4,
-  eNumberTooBig = 5
+  eNumberTooBig = 5,
+  eMissQuotationMark = 6,
+  eInvalidStringEscape = 7,
+  eInvalidStringChar = 8,
+  eInvalidUnicodeHex = 9,
+  eInvalidUnicodeSurrogate = 10
 }
 
 TkJson.typeCode = {
@@ -31,9 +36,49 @@ TkJson._pointer = 1
 
 -- Parser functions
 
-TkJson.parseNumber = function()
-  local numberString = ''
+TkJson.parseString = function()
+  local resultString = ''
 
+  TkJson._pointer = TkJson._pointer + 1
+  while true do
+    local ch = TkJson._charArray[TkJson._pointer]
+    TkJson._pointer = TkJson._pointer + 1
+    if ch == nil then
+      return TkJson.errorCode.eMissQuotationMark, nil
+    elseif ch == '"' then
+      return TkJson.errorCode.eOk, resultString
+    elseif ch == '\\' then
+      ch = TkJson._charArray[TkJson._pointer]
+      TkJson._pointer = TkJson._pointer + 1
+      if ch == '\"' then
+        resultString = resultString .. '\"'
+      elseif ch == '\\' then
+        resultString = resultString .. '\\'
+      elseif ch == '/' then
+        resultString = resultString .. '/'
+      elseif ch == 'b' then
+        resultString = resultString .. '\b'
+      elseif ch == 'f' then
+        resultString = resultString .. '\f'
+      elseif ch == 'n' then
+        resultString = resultString .. '\n'
+      elseif ch == 'r' then
+        resultString = resultString .. '\r'
+      elseif ch == 't' then
+        resultString = resultString .. '\t'
+      elseif ch == 'u' then
+        
+    else
+      if string.byte(ch) < 0x20 then
+        return TkJson.errorCode.eInvalidStringChar, nil
+      else
+        resultString = resultString .. ch
+      end
+    end
+  end
+end
+
+TkJson.parseNumber = function()
   local isPlus = function()
     if TkJson._charArray[TkJson._pointer] then
       local byteCode = string.byte(TkJson._charArray[TkJson._pointer])
@@ -93,7 +138,7 @@ TkJson.parseNumber = function()
   local stopPoint = TkJson._pointer - 1
   local numberValue = tonumber(table.concat(TkJson._charArray, '', startPoint, stopPoint))
   if numberValue == math.huge or numberValue == -math.huge then
-    return TkJson.errorCode.eNumberTooBing, numberValue
+    return TkJson.errorCode.eNumberTooBig, nil
   else
     return TkJson.errorCode.eOk,  numberValue
   end
@@ -149,7 +194,7 @@ TkJson.parseValue = function()
   elseif ch == 'f' then
     return TkJson.parseFalse()
   elseif ch == '"' then
-    -- return TkJson.parseString()
+    return TkJson.parseString()
   elseif ch == '[' then
     -- return TkJson.parseArray()
   elseif ch == '{' then
@@ -175,6 +220,7 @@ TkJson.parse = function(jsonString)
   TkJson._pointer = 1
 
   for ch in string.gmatch(jsonString, utf8.charpattern) do
+    --print(ch)
     table.insert(TkJson._charArray, ch)
   end
 
