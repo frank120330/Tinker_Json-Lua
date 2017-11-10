@@ -27,37 +27,26 @@ TkTest.expectEqualString = function(expect, actual)
   local equality = (expect == actual)
   TkTest.expectEqual(equality, expect, actual, '%s')
 end
-
-local function isArray(t)
-  if type(t) ~= 'table' then
-    return false
-  end
-  
-  local length = #t
-  for key, value in pairs(t) do
-    if type(key) ~= 'number' then
-      return false
-    end
-    local index = math.tointeger(key)
-    if index == nil or index <= 0 or index > length then
-      return false
-    end
-  end
-  
-  return true
-end
  
-TkTest.expectEqualTable = function(expect, actual)
-  for key, value1 in pairs(expect) do
-    local value2 = actual[key]
-    if type(value1) == 'nil' or type(value1) == 'boolean' then
-      TkTest.expectEqualLiteral(value1, value2)
-    elseif type(value1) == 'number' then
-      TkTest.expectEqualNumber(value1, value2)
-    elseif type(value1) == 'string' then
-      TkTest.expectEqualString(value1, value2)
-    elseif type(value1) == 'table' then
-      TkTest.expectEqualTable(value1, value2)
+TkTest.expectEqualArray = function(expect, actual)
+  local equality = (expect.__length == actual.__length)
+  TkTest.expectEqual(equality, expect.__length, actual.__length, '%d')
+
+  for i = 1, expect.__length do
+    local expectValue = expect[i]
+    local actualValue = actual[i]
+    if type(expectValue) == 'nil' or type(expectValue) == 'boolean' then
+      TkTest.expectEqualLiteral(expectValue, actualValue)
+    elseif type(expectValue) == 'number' then
+      TkTest.expectEqualNumber(expectValue, actualValue)
+    elseif type(expectValue) == 'string' then
+      TkTest.expectEqualString(expectValue, actualValue)
+    elseif type(expectValue) == 'table' then
+      if expectValue.__length ~= nil then
+        TkTest.expectEqualArray(expectValue, actualValue)
+      else
+        -- TkTest.expectEqualObject(expectValue, actualValue)
+      end
     else
       error('> Unrecognized Data Type!')
     end

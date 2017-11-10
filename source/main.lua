@@ -121,9 +121,20 @@ local TestParseIllegalString = function()
 end
 
 local function TestParseArray()
-  TestArray({ nil, false, true, 123, 'abc' }, '[ null , false , true , 123 , \"abc\" ]')
-  TestArray({}, '[ ]')
-  TestArray({ {}, { 0 }, { 0, 1 }, { 0, 1, 2} }, '[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]')
+  TestArray(
+    { nil, false, true, 123, 'abc', __length = 5 }, 
+    '[ null , false , true , 123 , \"abc\" ]'
+  )
+  TestArray({ __length = 0 }, '[ ]')
+  TestArray(
+    { 
+      { __length = 0 }, 
+      { 0, __length = 1 }, 
+      { 0, 1, __length = 2 }, 
+      { 0, 1, 2, _length = 3}, __length = 4 
+    }, 
+    '[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]'
+  )
 end
 
 local TestParse = function()
@@ -133,6 +144,7 @@ local TestParse = function()
   TestParseIllegalNumber()
   TestParseString()
   TestParseIllegalString()
+  TestParseArray()
 
   print('> All Tests Passed!')
 end

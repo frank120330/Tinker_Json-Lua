@@ -101,4 +101,23 @@ TkJson.parse = function(jsonString)
   return TkJson.parserResult, TkJson.parserValue
 end
 
+local function isArray(t)
+  if type(t) ~= 'table' then
+    return false
+  end
+  
+  local length = #t
+  for key, value in pairs(t) do
+    if type(key) ~= 'number' then
+      return false
+    end
+    local index = math.tointeger(key)
+    if index == nil or index <= 0 or index > length then
+      return false
+    end
+  end
+  
+  return true
+end
+
 return TkJson
