@@ -137,6 +137,13 @@ local function TestParseArray()
   )
 end
 
+local function TestParseIllegalArray()
+  TestError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1')
+  TestError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1}')
+  TestError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1 2')
+  TestError(TkJson.errorCode.eMissCommaOrSquareBracket, '[[]')
+end
+
 local TestParse = function()
   TestParseLiteral()
   TestParseIllegalLiteral()
@@ -145,6 +152,7 @@ local TestParse = function()
   TestParseString()
   TestParseIllegalString()
   TestParseArray()
+  TestParseIllegalArray()
 
   print('> All Tests Passed!')
 end
