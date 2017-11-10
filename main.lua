@@ -1,5 +1,5 @@
-local TkTest = require('TkTest')
-local TkJson = require('TkJson')
+local TkTest = require('source/TkTest')
+local TkJson = require('source/TkJson')
 
 local TestError = function(errorCode, json)
   local result, value = TkJson.parse(json)
@@ -35,6 +35,16 @@ local TestObject = function(object, json)
   local result, value = TkJson.parse(json)
   TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
   TkTest.expectEqualObject(object, value)
+end
+
+local TestFile = function(filename)
+  local jsonFile = assert(io.open(filename, 'r'))
+  local jsonString = jsonFile:read('a')
+  local startClock = os.clock()
+  local result, value = TkJson.parse(jsonString)
+  local stopClock = os.clock()
+  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
+  print(string.format("> Pressure Test - Filename: %s, Elapsed Time: %fs", filename, stopClock - startClock))
 end
 
 local TestParseLiteral = function()
@@ -191,4 +201,12 @@ local TestParse = function()
   print('> All Tests Passed!')
 end
 
+local TestParseFile = function()
+  TestFile('test/simple.json')
+  TestFile('test/twitter.json')
+  TestFile('test/canada.json')
+  TestFile('test/citm_catalog.json')
+end
+
 TestParse()
+TestParseFile()
