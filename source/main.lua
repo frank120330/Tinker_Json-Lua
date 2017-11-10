@@ -31,6 +31,12 @@ local TestArray = function(array, json)
   TkTest.expectEqualArray(array, value)
 end
 
+local TestObject = function(object, json)
+  local result, value = TkJson.parse(json)
+  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
+  TkTest.expectEqualObject(object, value)
+end
+
 local TestParseLiteral = function()
   TestLiteral(nil, 'null')
   TestLiteral(true, 'true')
@@ -131,7 +137,7 @@ local function TestParseArray()
       { __length = 0 }, 
       { 0, __length = 1 }, 
       { 0, 1, __length = 2 }, 
-      { 0, 1, 2, _length = 3}, __length = 4 
+      { 0, 1, 2, __length = 3 }, __length = 4 
     }, 
     '[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]'
   )
@@ -145,6 +151,30 @@ local function TestParseIllegalArray()
 end
 
 local function TestParseObject()
+  TestObject({}, '{}')
+  TestObject(
+    {
+      ['n'] = nil,
+      ['f'] = false,
+      ['t'] = true,
+      ['i'] = 123,
+      ['s'] = 'abc',
+      ['a'] = { 1, 2, 3, __length = 3 },
+      ['o'] = { ['1'] = 1, ['2'] = 2, ['3'] = 3 }
+    },
+    [===[
+      {
+        "n": null,
+        "f": false,
+        "t": true,
+        "i": 123,
+        "s": "abc",
+        "a": [ 1, 2, 3 ],
+        "o": { "1": 1, "2": 2, "3": 3 }
+      }
+    ]===]
+  )
+end
   
 
 local TestParse = function()
@@ -156,6 +186,7 @@ local TestParse = function()
   TestParseIllegalString()
   TestParseArray()
   TestParseIllegalArray()
+  TestParseObject()
 
   print('> All Tests Passed!')
 end

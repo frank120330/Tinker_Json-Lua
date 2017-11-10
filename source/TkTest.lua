@@ -53,7 +53,25 @@ TkTest.expectEqualArray = function(expect, actual)
   end
 end
 
-TkTest.expectEqualObject = function(expect, equal)
-  
+TkTest.expectEqualObject = function(expect, actual)
+  for key, value in pairs(expect) do
+    local another = actual[key]
+    if type(value) == 'nil' or type(value) == 'boolean' then
+      TkTest.expectEqualLiteral(value, another)
+    elseif type(value) == 'number' then
+      TkTest.expectEqualNumber(value, another)
+    elseif type(value) == 'string' then
+      TkTest.expectEqualString(value, another)
+    elseif type(value) == 'table' then
+      if value.__length ~= nil then
+        TkTest.expectEqualArray(value, another)
+      else
+        TkTest.expectEqualObject(value, another)
+      end
+    else
+      error('> Unrecognized Data Type!')
+    end
+  end
+end
 
 return TkTest

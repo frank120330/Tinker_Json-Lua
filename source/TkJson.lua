@@ -334,7 +334,7 @@ function parseObject()
   if gCharArray[gCharPointer] == '}' then
     gCharPointer = gCharPointer + 1
     return result, value
-  }
+  end
   while true do
     local key = nil
     local element = nil
