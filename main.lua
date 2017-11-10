@@ -1,148 +1,102 @@
-local TkTest = require('source/TkTest')
 local TkJson = require('source/TkJson')
+local TkParserTester = require('source/TkParserTester')
 
-local TestError = function(errorCode, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(errorCode, result)
-  TkTest.expectEqualLiteral(nil, value)
+local TestLiteral = function()
+  TkParserTester.testParseLiteral(nil, 'null')
+  TkParserTester.testParseLiteral(true, 'true')
+  TkParserTester.testParseLiteral(false, 'false')
 end
 
-local TestLiteral = function(literal, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
-  TkTest.expectEqualLiteral(literal, value)
+local TestIllegalLiteral = function()
+  TkParserTester.testParseError(TkJson.errorCode.eExpectValue, '')
+  TkParserTester.testParseError(TkJson.errorCode.eExpectValue, ' ')
+
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, 'nul')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, '?')
+
+  TkParserTester.testParseError(TkJson.errorCode.eRootNotSingular, 'null x')
 end
 
-local TestNumber = function(number, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
-  TkTest.expectEqualNumber(number, value)
+local TestNumber = function()
+  TkParserTester.testParseNumber(0.0, '0')
+  TkParserTester.testParseNumber(0.0, '-0')
+  TkParserTester.testParseNumber(0.0, '-0.0')
+  TkParserTester.testParseNumber(1.0, '1')
+  TkParserTester.testParseNumber(-1.0, '-1')
+  TkParserTester.testParseNumber(1.5, '1.5')
+  TkParserTester.testParseNumber(-1.5, '-1.5')
+  TkParserTester.testParseNumber(3.1416, '3.1416')
+  TkParserTester.testParseNumber(1E10, '1E10')
+  TkParserTester.testParseNumber(1e10, '1e10')
+  TkParserTester.testParseNumber(1E+10, '1E+10')
+  TkParserTester.testParseNumber(1E-10, '1E-10')
+  TkParserTester.testParseNumber(-1E10, '-1E10')
+  TkParserTester.testParseNumber(-1e10, '-1e10')
+  TkParserTester.testParseNumber(-1E+10, '-1E+10')
+  TkParserTester.testParseNumber(-1E-10, '-1E-10')
+  TkParserTester.testParseNumber(1.234E+10, '1.234E+10')
+  TkParserTester.testParseNumber(1.234E-10, '1.234E-10')
+  TkParserTester.testParseNumber(0.0, '1e-10000')
+
+  TkParserTester.testParseNumber(1.0000000000000002, '1.0000000000000002')
+  TkParserTester.testParseNumber( 4.9406564584124654e-324, '4.9406564584124654e-324')
+  TkParserTester.testParseNumber(-4.9406564584124654e-324, '-4.9406564584124654e-324')
+  TkParserTester.testParseNumber( 2.2250738585072009e-308, '2.2250738585072009e-308')
+  TkParserTester.testParseNumber(-2.2250738585072009e-308, '-2.2250738585072009e-308')
+  TkParserTester.testParseNumber( 2.2250738585072014e-308, '2.2250738585072014e-308')
+  TkParserTester.testParseNumber(-2.2250738585072014e-308, '-2.2250738585072014e-308')
+  TkParserTester.testParseNumber( 1.7976931348623157e+308, '1.7976931348623157e+308')
+  TkParserTester.testParseNumber(-1.7976931348623157e+308, '-1.7976931348623157e+308')
 end
 
-local TestString = function(str, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
-  TkTest.expectEqualString(str, value)
+local TestIllegalNumber = function()
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, '+0')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, '+1')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, '.123')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, '1.')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, 'INF')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, 'inf')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, 'NAN')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, 'nan')
+
+  TkParserTester.testParseError(TkJson.errorCode.eNumberTooBig, '1e309')
+  TkParserTester.testParseError(TkJson.errorCode.eNumberTooBig, '-1e309')
+  TkParserTester.testParseError(TkJson.errorCode.eRootNotSingular, '0123')
+  TkParserTester.testParseError(TkJson.errorCode.eRootNotSingular, '0x0')
+  TkParserTester.testParseError(TkJson.errorCode.eRootNotSingular, '0x123')
 end
 
-local TestArray = function(array, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
-  TkTest.expectEqualArray(array, value)
+local TestString = function()
+  TkParserTester.testParseString('', '\"\"')
+  TkParserTester.testParseString('Hello', '\"Hello\"')
+  TkParserTester.testParseString('Hello\nWorld', '\"Hello\\nWorld\"')
+  TkParserTester.testParseString('\" \\ / \b \f \n \r \t', '\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t\"')
+  TkParserTester.testParseString('Hello\0World', '\"Hello\\u0000World\"')
+  TkParserTester.testParseString('\x24', '\"\\u0024\"')
+  TkParserTester.testParseString('\xC2\xA2', '\"\\u00A2\"')
+  TkParserTester.testParseString('\xE2\x82\xAC', '\"\\u20AC\"')
+  TkParserTester.testParseString('\xF0\x9D\x84\x9E', '\"\\uD834\\uDD1E\"')
+  TkParserTester.testParseString('\xF0\x9D\x84\x9E', '\"\\ud834\\udd1e\"')
 end
 
-local TestObject = function(object, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
-  TkTest.expectEqualObject(object, value)
+local TestIllegalString = function()
+  TkParserTester.testParseError(TkJson.errorCode.eMissQuotationMark, '\"');
+  TkParserTester.testParseError(TkJson.errorCode.eMissQuotationMark, '\"abc');
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, '\"\\v\"');
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, '\"\\;\"');
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, '\"\\0\"');
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, '\"\\x12\"');
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, '\"\x01\"');
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, '\"\x1F\"');
 end
 
-local TestFile = function(filename)
-  local jsonFile = assert(io.open(filename, 'r'))
-  local jsonString = jsonFile:read('a')
-  local startClock = os.clock()
-  local result, value = TkJson.parse(jsonString)
-  local stopClock = os.clock()
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
-  print(string.format("> Pressure Test - Filename: %s, Elapsed Time: %fs", filename, stopClock - startClock))
-end
-
-local TestParseLiteral = function()
-  TestLiteral(nil, 'null')
-  TestLiteral(true, 'true')
-  TestLiteral(false, 'false')
-end
-
-local TestParseIllegalLiteral = function()
-  TestError(TkJson.errorCode.eExpectValue, '')
-  TestError(TkJson.errorCode.eExpectValue, ' ')
-
-  TestError(TkJson.errorCode.eInvalidValue, 'nul')
-  TestError(TkJson.errorCode.eInvalidValue, '?')
-
-  TestError(TkJson.errorCode.eRootNotSingular, 'null x')
-end
-
-local TestParseNumber = function()
-  TestNumber(0.0, '0')
-  TestNumber(0.0, '-0')
-  TestNumber(0.0, '-0.0')
-  TestNumber(1.0, '1')
-  TestNumber(-1.0, '-1')
-  TestNumber(1.5, '1.5')
-  TestNumber(-1.5, '-1.5')
-  TestNumber(3.1416, '3.1416')
-  TestNumber(1E10, '1E10')
-  TestNumber(1e10, '1e10')
-  TestNumber(1E+10, '1E+10')
-  TestNumber(1E-10, '1E-10')
-  TestNumber(-1E10, '-1E10')
-  TestNumber(-1e10, '-1e10')
-  TestNumber(-1E+10, '-1E+10')
-  TestNumber(-1E-10, '-1E-10')
-  TestNumber(1.234E+10, '1.234E+10')
-  TestNumber(1.234E-10, '1.234E-10')
-  TestNumber(0.0, '1e-10000')
-
-  TestNumber(1.0000000000000002, '1.0000000000000002')
-  TestNumber( 4.9406564584124654e-324, '4.9406564584124654e-324')
-  TestNumber(-4.9406564584124654e-324, '-4.9406564584124654e-324')
-  TestNumber( 2.2250738585072009e-308, '2.2250738585072009e-308')
-  TestNumber(-2.2250738585072009e-308, '-2.2250738585072009e-308')
-  TestNumber( 2.2250738585072014e-308, '2.2250738585072014e-308')
-  TestNumber(-2.2250738585072014e-308, '-2.2250738585072014e-308')
-  TestNumber( 1.7976931348623157e+308, '1.7976931348623157e+308')
-  TestNumber(-1.7976931348623157e+308, '-1.7976931348623157e+308')
-end
-
-local TestParseIllegalNumber = function()
-  TestError(TkJson.errorCode.eInvalidValue, '+0')
-  TestError(TkJson.errorCode.eInvalidValue, '+1')
-  TestError(TkJson.errorCode.eInvalidValue, '.123')
-  TestError(TkJson.errorCode.eInvalidValue, '1.')
-  TestError(TkJson.errorCode.eInvalidValue, 'INF')
-  TestError(TkJson.errorCode.eInvalidValue, 'inf')
-  TestError(TkJson.errorCode.eInvalidValue, 'NAN')
-  TestError(TkJson.errorCode.eInvalidValue, 'nan')
-
-  TestError(TkJson.errorCode.eNumberTooBig, '1e309')
-  TestError(TkJson.errorCode.eNumberTooBig, '-1e309')
-  TestError(TkJson.errorCode.eRootNotSingular, '0123')
-  TestError(TkJson.errorCode.eRootNotSingular, '0x0')
-  TestError(TkJson.errorCode.eRootNotSingular, '0x123')
-end
-
-local TestParseString = function()
-  TestString('', '\"\"')
-  TestString('Hello', '\"Hello\"')
-  TestString('Hello\nWorld', '\"Hello\\nWorld\"')
-  TestString('\" \\ / \b \f \n \r \t', '\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t\"')
-  TestString('Hello\0World', '\"Hello\\u0000World\"')
-  TestString('\x24', '\"\\u0024\"')
-  TestString('\xC2\xA2', '\"\\u00A2\"')
-  TestString('\xE2\x82\xAC', '\"\\u20AC\"')
-  TestString('\xF0\x9D\x84\x9E', '\"\\uD834\\uDD1E\"')
-  TestString('\xF0\x9D\x84\x9E', '\"\\ud834\\udd1e\"')
-end
-
-local TestParseIllegalString = function()
-  TestError(TkJson.errorCode.eMissQuotationMark, '\"');
-  TestError(TkJson.errorCode.eMissQuotationMark, '\"abc');
-  TestError(TkJson.errorCode.eInvalidStringEscape, '\"\\v\"');
-  TestError(TkJson.errorCode.eInvalidStringEscape, '\"\\;\"');
-  TestError(TkJson.errorCode.eInvalidStringEscape, '\"\\0\"');
-  TestError(TkJson.errorCode.eInvalidStringEscape, '\"\\x12\"');
-  TestError(TkJson.errorCode.eInvalidStringChar, '\"\x01\"');
-  TestError(TkJson.errorCode.eInvalidStringChar, '\"\x1F\"');
-end
-
-local function TestParseArray()
-  TestArray(
+local TestArray = function()
+  TkParserTester.testParseArray(
     { nil, false, true, 123, 'abc', __length = 5 }, 
     '[ null , false , true , 123 , \"abc\" ]'
   )
-  TestArray({ __length = 0 }, '[ ]')
-  TestArray(
+  TkParserTester.testParseArray({ __length = 0 }, '[ ]')
+  TkParserTester.testParseArray(
     { 
       { __length = 0 }, 
       { 0, __length = 1 }, 
@@ -153,16 +107,16 @@ local function TestParseArray()
   )
 end
 
-local function TestParseIllegalArray()
-  TestError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1')
-  TestError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1}')
-  TestError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1 2')
-  TestError(TkJson.errorCode.eMissCommaOrSquareBracket, '[[]')
+local TestIllegalArray = function()
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1}')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1 2')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, '[[]')
 end
 
-local function TestParseObject()
-  TestObject({}, '{}')
-  TestObject(
+local TestObject = function()
+  TkParserTester.testParseObject({}, '{}')
+  TkParserTester.testParseObject(
     {
       ['n'] = nil,
       ['f'] = false,
@@ -187,26 +141,26 @@ local function TestParseObject()
 end
   
 
-local TestParse = function()
-  TestParseLiteral()
-  TestParseIllegalLiteral()
-  TestParseNumber()
-  TestParseIllegalNumber()
-  TestParseString()
-  TestParseIllegalString()
-  TestParseArray()
-  TestParseIllegalArray()
-  TestParseObject()
+local TestParser = function()
+  TestLiteral()
+  TestIllegalLiteral()
+  TestNumber()
+  TestIllegalNumber()
+  TestString()
+  TestIllegalString()
+  TestArray()
+  TestIllegalArray()
+  TestObject()
 
   print('> All Tests Passed!')
 end
 
-local TestParseFile = function()
-  TestFile('test/simple.json')
-  TestFile('test/twitter.json')
-  TestFile('test/canada.json')
-  TestFile('test/citm_catalog.json')
+local TestFile = function()
+  TkParserTester.testParseFile('test/simple.json')
+  TkParserTester.testParseFile('test/twitter.json')
+  TkParserTester.testParseFile('test/canada.json')
+  TkParserTester.testParseFile('test/citm_catalog.json')
 end
 
-TestParse()
-TestParseFile()
+TestParser()
+TestFile()
