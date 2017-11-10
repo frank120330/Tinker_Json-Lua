@@ -14,7 +14,10 @@ TkJson.errorCode = {
   eInvalidStringChar = 8,
   eInvalidUnicodeHex = 9,
   eInvalidUnicodeSurrogate = 10,
-  eMissCommaOrSquareBracket = 11
+  eMissCommaOrSquareBracket = 11,
+  eMissKey = 12,
+  eMissColon = 13,
+  eMissCommaOrCurlyBracket = 14
 }
 
 TkJson.typeCode = {
@@ -47,6 +50,7 @@ local decodeUtf8
 local encodeUtf8
 local parseString
 local parseArray
+local parseObject
 
 -- Parser functions
 
@@ -315,9 +319,53 @@ function parseArray()
         gCharPointer = gCharPointer + 1
         return result, value
       else
-        result = TkJson.errorCode.eMissCommaOrSquareBracket
-        return result, nil
+        return TkJson.errorCode.eMissCommaOrSquareBracket, nil
       end
+    end
+  end
+end
+
+function parseObject()
+  local result = TkJson.errorCode.eOk
+  local value = {}
+
+  gCharPointer = gCharPointer + 1
+  parseWhitespace()
+  if gCharArray[gCharPointer] == '}' then
+    gCharPointer = gCharPointer + 1
+    return result, value
+  }
+  while true do
+    local key = nil
+    local element = nil
+
+    if gCharArray[gCharPointer] ~= '"' then
+      return TkJson.errorCode.eMissKey, nil
+    end
+    result, key = parseString()
+    if result ~= TkJson.errorCode.eOk then
+      return result, nil
+    end
+    parseWhitespace()
+    if gCharArray[gCharPointer] ~= ':' then
+      return TkJson.errorCode.eMissColon, nil
+    end
+    gCharPointer = gCharPointer + 1
+    parseWhitespace()
+    result, element = parseValue()
+    if result ~= TkJson.errorCode.eOk then
+      return result, nil
+    end
+    value[key] = element
+    parseWhitespace()
+    if gCharArray[gCharPointer] == ',' then
+      gCharPointer = gCharPointer + 1
+      parseWhitespace()
+    elseif gCharArray[gCharPointer] == '}' then
+      gCharPointer = gCharPointer + 1
+      return result, value
+    else
+      return TkJson.errorCode.eMissCommaOrCurlyBracket, nil
     end
   end
 end
@@ -337,7 +385,7 @@ function parseValue()
   elseif ch == '[' then
     return parseArray()
   elseif ch == '{' then
-    -- return parseObject()
+    return parseObject()
   else
     return parseNumber()
   end

@@ -144,6 +144,9 @@ local function TestParseIllegalArray()
   TestError(TkJson.errorCode.eMissCommaOrSquareBracket, '[[]')
 end
 
+local function TestParseObject()
+  
+
 local TestParse = function()
   TestParseLiteral()
   TestParseIllegalLiteral()

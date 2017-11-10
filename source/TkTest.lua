@@ -45,12 +45,15 @@ TkTest.expectEqualArray = function(expect, actual)
       if expectValue.__length ~= nil then
         TkTest.expectEqualArray(expectValue, actualValue)
       else
-        -- TkTest.expectEqualObject(expectValue, actualValue)
+        TkTest.expectEqualObject(expectValue, actualValue)
       end
     else
       error('> Unrecognized Data Type!')
     end
   end
 end
+
+TkTest.expectEqualObject = function(expect, equal)
+  
 
 return TkTest
