@@ -15,7 +15,7 @@ end
 
 TkTest.expectEqualLiteral = function(expect, actual)
   local equality = (expect == actual)
-  TkTest.expectEqual(equality, nil, actual, '%s')
+  TkTest.expectEqual(equality, expect, actual, '%s')
 end
 
 TkTest.expectEqualNumber = function(expect, actual)

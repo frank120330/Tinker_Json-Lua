@@ -1,5 +1,7 @@
 local TkJson = {}
 
+-- Type codes & Error codes
+
 TkJson.errorCode = {
   eOk = 0,
   eNotWhitespace = 1,
@@ -18,10 +20,23 @@ TkJson.errorCode = {
   eMissCommaOrCurlyBracket = 14
 }
 
--- Global variables & functions declarations
+TkJson.typeCode = {
+  eEmpty = 0,
+  eWhitespace = 1,
+  eValue = 2,
+  eNull = 3,
+  eTrue = 4,
+  eFalse = 5,
+  eNumber = 6,
+  eString = 7,
+  eArray = 8,
+  eObject = 9
+}
 
-local gIterator = nil
-local gNextChar = nil
+-- Global variables & local functions declaration
+
+local gCharArray = {}
+local gCharPointer = 1
 
 local parseWhitespace
 local parseValue
@@ -37,126 +52,115 @@ local parseString
 local parseArray
 local parseObject
 
---
+-- Parser functions
 
-parseWhitespace = function()
-  while gNextChar == ' ' or
-    gNextChar == '\t' or
-    gNextChar == '\n' or
-    gNextChar == '\r' do
-    gNextChar = gIterator()
+function parseWhitespace()
+  while gCharArray[gCharPointer] == ' ' or
+    gCharArray[gCharPointer] == '\t' or
+    gCharArray[gCharPointer] == '\n' or
+    gCharArray[gCharPointer] == '\r' do
+    gCharPointer = gCharPointer + 1
   end
 end
 
-local nullString = {
-  'n', 'u', 'l', 'l'
-}
-parseNull = function()
+function parseNull()
+  local nullString = {
+    'n', 'u', 'l', 'l'
+  }
   for i = 1, 4 do
-    if gNextChar ~= nullString[i] then
+    if gCharArray[gCharPointer] ~= nullString[i] then
       return TkJson.errorCode.eInvalidValue, nil
     end
-    gNextChar = gIterator()
+    gCharPointer = gCharPointer + 1
   end
   return TkJson.errorCode.eOk, nil
 end
 
-local trueString = {
-  't', 'r', 'u', 'e'
-}
-parseTrue = function()
+function parseTrue()
+  local trueString = {
+    't', 'r', 'u', 'e'
+  }
   for i = 1, 4 do
-    if gNextChar ~= trueString[i] then
+    if gCharArray[gCharPointer] ~= trueString[i] then
       return TkJson.errorCode.eInvalidValue, nil
     end
-    gNextChar = gIterator()
+    gCharPointer = gCharPointer + 1
   end
   return TkJson.errorCode.eOk, true
 end
 
-local falseString = {
-  'f', 'a', 'l', 's', 'e'
-}
-parseFalse = function()
+function parseFalse()
+  local falseString = {
+    'f', 'a', 'l', 's', 'e'
+  }
   for i = 1, 5 do
-    if gNextChar ~= falseString[i] then
+    if gCharArray[gCharPointer] ~= falseString[i] then
       return TkJson.errorCode.eInvalidValue, nil
     end
-    gNextChar = gIterator()
+    gCharPointer = gCharPointer + 1
   end
   return TkJson.errorCode.eOk, false
 end
 
-local byteZero = string.byte('0')
-local byteOne = string.byte('1')
-local byteNine = string.byte('9')
-
-isPlus = function()
-  if gNextChar then
-    local byteCode = string.byte(gNextChar)
-    return (byteCode >= byteOne and byteCode <= byteNine)
+function isPlus()
+  if gCharArray[gCharPointer] then
+    local byteCode = string.byte(gCharArray[gCharPointer])
+    return (byteCode >= string.byte('1') and byteCode <= string.byte('9'))
   else
     return false
   end
 end
 
-isDigit = function()
-  if gNextChar then
-    local byteCode = string.byte(gNextChar)
-    return (byteCode >= byteZero and byteCode <= byteNine)
+function isDigit()
+  if gCharArray[gCharPointer] then
+    local byteCode = string.byte(gCharArray[gCharPointer])
+    return (byteCode >= string.byte('0') and byteCode <= string.byte('9'))
   else
     return false
   end
 end
 
-parseNumber = function()
-  local numberString = ''
-  if gNextChar == '-' then
-    numberString = numberString .. gNextChar
-    gNextChar = gIterator()
+function parseNumber()
+  local startPoint = gCharPointer
+  if gCharArray[gCharPointer] == '-' then
+    gCharPointer = gCharPointer + 1
   end
-  if gNextChar == '0' then
-    numberString = numberString .. gNextChar
-    gNextChar = gIterator()
+  if gCharArray[gCharPointer] == '0' then
+    gCharPointer = gCharPointer + 1
   else 
     if not isPlus() then
       return TkJson.errorCode.eInvalidValue, nil
     end
     repeat
-      numberString = numberString .. gNextChar
-      gNextChar = gIterator()
+      gCharPointer = gCharPointer + 1
     until (not isDigit())
   end
-  if gNextChar == '.' then
-    numberString = numberString .. gNextChar
-    gNextChar = gIterator()
+  if gCharArray[gCharPointer] == '.' then
+    gCharPointer = gCharPointer + 1
     if not isDigit() then
       return TkJson.errorCode.eInvalidValue, nil
     end
     repeat
-      numberString = numberString .. gNextChar
-      gNextChar = gIterator()
+      gCharPointer = gCharPointer + 1
     until (not isDigit())
   end
-  if gNextChar == 'e' or 
-    gNextChar == 'E' then
-      numberString = numberString .. gNextChar
-      gNextChar = gIterator()
-    if gNextChar == '+' or
-      gNextChar == '-' then
-      numberString = numberString .. gNextChar
-      gNextChar = gIterator()
+  if gCharArray[gCharPointer] == 'e' or 
+    gCharArray[gCharPointer] == 'E' then
+      gCharPointer = gCharPointer + 1
+    if gCharArray[gCharPointer] == '+' or
+      gCharArray[gCharPointer] == '-' then
+        gCharPointer = gCharPointer + 1
     end
     if not isDigit() then
       return TkJson.errorCode.eInvalidValue, nil
     end
     repeat
-      numberString = numberString .. gNextChar
-      gNextChar = gIterator()
+      gCharPointer = gCharPointer + 1
     until (not isDigit())
   end
 
-  local value = tonumber(numberString)
+  local stopPoint = gCharPointer - 1
+  local value = tonumber(table.concat(gCharArray, '', startPoint, stopPoint))
   if value == math.huge or value == -math.huge then
     return TkJson.errorCode.eNumberTooBig, nil
   else
@@ -164,36 +168,33 @@ parseNumber = function()
   end
 end
 
-local byteUpperA = string.byte('A')
-local byteLowerA = string.byte('a')
-local byteUpperF = string.byte('F')
-local byteLowerF = string.byte('f')
-
-decodeUtf8 = function()
+function decodeUtf8()
   local hex = 0
-  local byte = 0
+  local ch = nil
+  local bt = 0
   for i = 1, 4 do
-    if gNextChar == nil then
+    ch = gCharArray[gCharPointer]
+    gCharPointer = gCharPointer + 1
+    if ch == nil then
       return nil
     else
-      byte = string.byte(gNextChar)
+      bt = string.byte(ch)
       hex = hex << 4
-      if byte >= byteZero and byte <= byteNine then
-        hex = hex | (byte - byteZero)
-      elseif byte >= byteUpperA and byte <= byteUpperF then
-        hex = hex | (byte - byteUpperA + 10)
-      elseif byte >= byteLowerA and byte <= byteLowerF then
-        hex = hex | (byte - byteLowerA + 10)
+      if bt >= string.byte('0') and bt <= string.byte('9') then
+        hex = hex | (bt - string.byte('0'))
+      elseif bt >= string.byte('A') and bt <= string.byte('F') then
+        hex = hex | (bt - (string.byte('A') - 10))
+      elseif bt >= string.byte('a') and bt <= string.byte('f') then
+        hex = hex | (bt - (string.byte('a') - 10))
       else
         return nil
       end
     end
-    gNextChar = gIterator()
   end
   return hex
 end
 
-encodeUtf8 = function(hex)
+function encodeUtf8(hex)
   local value = nil
   if hex <= 0x7F then
     value = string.char(hex & 0xFF)
@@ -219,20 +220,20 @@ encodeUtf8 = function(hex)
   return value
 end
 
-parseString = function()
+function parseString()
   local value = ''
 
-  gNextChar = gIterator()
+  gCharPointer = gCharPointer + 1
   while true do
-    local ch = gNextChar
-    gNextChar = gIterator()
+    local ch = gCharArray[gCharPointer]
+    gCharPointer = gCharPointer + 1
     if ch == nil then
       return TkJson.errorCode.eMissQuotationMark, nil
     elseif ch == '"' then
       return TkJson.errorCode.eOk, value
     elseif ch == '\\' then
-      ch = gNextChar
-      gNextChar = gIterator()
+      ch = gCharArray[gCharPointer]
+      gCharPointer = gCharPointer + 1
       if ch == '\"' then
         value = value .. '\"'
       elseif ch == '\\' then
@@ -257,13 +258,13 @@ parseString = function()
           return TkJson.errorCode.eInvalidUnicodeHex, nil
         end
         if hex1 >= 0xD800 and hex1 <= 0xDBFF then
-          ch = gNextChar
-          gNextChar = gIterator()
+          ch = gCharArray[gCharPointer]
+          gCharPointer = gCharPointer + 1
           if ch ~= '\\' then
             return TkJson.errorCode.eInvalidUnicodeSurrogate, nil
           end
-          ch = gNextChar
-          gNextChar = gIterator()
+          ch = gCharArray[gCharPointer]
+          gCharPointer = gCharPointer + 1
           if ch ~= 'u' then
             return TkJson.errorCode.eInvalidUnicodeSurrogate, nil
           end
@@ -290,16 +291,16 @@ parseString = function()
   end
 end
 
-parseArray = function()
+function parseArray()
   local result = TkJson.errorCode.eOk
   local value = {
     __length = 0
   }
   
-  gNextChar = gIterator()
+  gCharPointer = gCharPointer + 1
   parseWhitespace()
-  if gNextChar == ']' then
-    gNextChar = gIterator()
+  if gCharArray[gCharPointer] == ']' then
+    gCharPointer = gCharPointer + 1
     return result, value
   end
   while true do
@@ -311,11 +312,11 @@ parseArray = function()
       value.__length = value.__length + 1
       value[value.__length] = element
       parseWhitespace()
-      if gNextChar == ',' then
-        gNextChar = gIterator()
+      if gCharArray[gCharPointer] == ',' then
+        gCharPointer = gCharPointer + 1
         parseWhitespace()
-      elseif gNextChar == ']' then
-        gNextChar = gIterator()
+      elseif gCharArray[gCharPointer] == ']' then
+        gCharPointer = gCharPointer + 1
         return result, value
       else
         return TkJson.errorCode.eMissCommaOrSquareBracket, nil
@@ -324,21 +325,21 @@ parseArray = function()
   end
 end
 
-parseObject = function()
+function parseObject()
   local result = TkJson.errorCode.eOk
   local value = {}
 
-  gNextChar = gIterator()
+  gCharPointer = gCharPointer + 1
   parseWhitespace()
-  if gNextChar == '}' then
-    gNextChar = gIterator()
+  if gCharArray[gCharPointer] == '}' then
+    gCharPointer = gCharPointer + 1
     return result, value
   end
   while true do
     local key = nil
     local element = nil
 
-    if gNextChar ~= '"' then
+    if gCharArray[gCharPointer] ~= '"' then
       return TkJson.errorCode.eMissKey, nil
     end
     result, key = parseString()
@@ -346,10 +347,10 @@ parseObject = function()
       return result, nil
     end
     parseWhitespace()
-    if gNextChar ~= ':' then
+    if gCharArray[gCharPointer] ~= ':' then
       return TkJson.errorCode.eMissColon, nil
     end
-    gNextChar = gIterator()
+    gCharPointer = gCharPointer + 1
     parseWhitespace()
     result, element = parseValue()
     if result ~= TkJson.errorCode.eOk then
@@ -357,11 +358,11 @@ parseObject = function()
     end
     value[key] = element
     parseWhitespace()
-    if gNextChar == ',' then
-      gNextChar = gIterator()
+    if gCharArray[gCharPointer] == ',' then
+      gCharPointer = gCharPointer + 1
       parseWhitespace()
-    elseif gNextChar == '}' then
-      gNextChar = gIterator()
+    elseif gCharArray[gCharPointer] == '}' then
+      gCharPointer = gCharPointer + 1
       return result, value
     else
       return TkJson.errorCode.eMissCommaOrCurlyBracket, nil
@@ -369,38 +370,43 @@ parseObject = function()
   end
 end
 
-parseValue = function()
-  if gNextChar == nil then
+function parseValue()
+  local ch = gCharArray[gCharPointer]
+  if ch == nil then
     return TkJson.errorCode.eExpectValue, nil
-  elseif gNextChar == 'n' then
+  elseif ch == 'n' then
     return parseNull()
-  elseif gNextChar == 't' then
+  elseif ch == 't' then
     return parseTrue()
-  elseif gNextChar == 'f' then
+  elseif ch == 'f' then
     return parseFalse()
-  elseif gNextChar == '"' then
+  elseif ch == '"' then
     return parseString()
-  elseif gNextChar == '[' then
+  elseif ch == '[' then
     return parseArray()
-  elseif gNextChar == '{' then
+  elseif ch == '{' then
     return parseObject()
   else
     return parseNumber()
   end
 end
 
-TkJson.parse = function(jsonString)
+function TkJson.parse(jsonString)
   local result = TkJson.errorCode.eExpectValue
   local value = nil
-  
-  gIterator = string.gmatch(jsonString, utf8.charpattern)
-  gNextChar = gIterator()
+  gCharArray = {}
+  gCharPointer = 1
+
+  for ch in string.gmatch(jsonString, utf8.charpattern) do
+    --print(ch)
+    table.insert(gCharArray, ch)
+  end
 
   parseWhitespace()
   result, value = parseValue()
   if result == TkJson.errorCode.eOk then
     parseWhitespace()
-    if gNextChar ~= nil then
+    if gCharPointer <= #gCharArray then
       result = TkJson.errorCode.eRootNotSingular
       value = nil
     end
