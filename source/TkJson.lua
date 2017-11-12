@@ -22,7 +22,9 @@ TkJson.errorCode = {
 
 local gIterator = nil
 local gNextChar = nil
+local gPointer = nil
 
+local getNextChar
 local parseWhitespace
 local parseValue
 local parseNull
@@ -39,12 +41,17 @@ local parseObject
 
 --
 
+getNextChar = function()
+  gPointer = gPointer + string.len(gNextChar)
+  gNextChar = gIterator()
+end
+
 parseWhitespace = function()
   while gNextChar == ' ' or
     gNextChar == '\t' or
     gNextChar == '\n' or
     gNextChar == '\r' do
-    gNextChar = gIterator()
+    getNextChar()
   end
 end
 
@@ -56,7 +63,7 @@ parseNull = function()
     if gNextChar ~= nullString[i] then
       return TkJson.errorCode.eInvalidValue, nil
     end
-    gNextChar = gIterator()
+    getNextChar()
   end
   return TkJson.errorCode.eOk, nil
 end
@@ -69,7 +76,7 @@ parseTrue = function()
     if gNextChar ~= trueString[i] then
       return TkJson.errorCode.eInvalidValue, nil
     end
-    gNextChar = gIterator()
+    getNextChar()
   end
   return TkJson.errorCode.eOk, true
 end
@@ -82,7 +89,7 @@ parseFalse = function()
     if gNextChar ~= falseString[i] then
       return TkJson.errorCode.eInvalidValue, nil
     end
-    gNextChar = gIterator()
+    getNextChar()
   end
   return TkJson.errorCode.eOk, false
 end
@@ -394,7 +401,8 @@ TkJson.parse = function(jsonString)
   local value = nil
   
   gIterator = string.gmatch(jsonString, utf8.charpattern)
-  gNextChar = gIterator()
+  gPointer = 1
+  getNextChar()
 
   parseWhitespace()
   result, value = parseValue()
