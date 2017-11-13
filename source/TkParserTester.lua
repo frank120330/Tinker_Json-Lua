@@ -1,6 +1,6 @@
 local TkJson = require('source/TkJson')
 local TkTest = require('source/TkTest')
-local ProFi = require('ProFi')
+-- local ProFi = require('ProFi')
 
 local TkParserTester = {}
 

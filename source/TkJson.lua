@@ -122,55 +122,25 @@ isDigit = function()
 end
 
 parseNumber = function()
+  if not isDigit() and gNextChar ~= '-' then
+    return TkJson.errorCode.eInvalidValue, nil
+  end
   local startPoint = gPointer
-  if gNextChar == '-' then
+  while isDigit() or
+    gNextChar == '+' or
+    gNextChar == '-' or
+    gNextChar == '.' or
+    gNextChar == 'e' or
+    gNextChar == 'E' do
     gPointer = gPointer + 1
     gNextChar = gIterator()
-  end
-  if gNextChar == '0' then
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
-  else 
-    if not isPlus() then
-      return TkJson.errorCode.eInvalidValue, nil
-    end
-    repeat
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
-    until (not isDigit())
-  end
-  if gNextChar == '.' then
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
-    if not isDigit() then
-      return TkJson.errorCode.eInvalidValue, nil
-    end
-    repeat
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
-    until (not isDigit())
-  end
-  if gNextChar == 'e' or 
-    gNextChar == 'E' then
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
-    if gNextChar == '+' or
-      gNextChar == '-' then
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
-    end
-    if not isDigit() then
-      return TkJson.errorCode.eInvalidValue, nil
-    end
-    repeat
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
-    until (not isDigit())
   end
 
   local stopPoint = gPointer - 1
   local value = tonumber(string.sub(gString, startPoint, stopPoint))
-  if value == math.huge or value == -math.huge then
+  if value == nil then
+    return TkJson.errorCode.eInvalidValue, nil
+  elseif value == math.huge or value == -math.huge then
     return TkJson.errorCode.eNumberTooBig, nil
   else
     return TkJson.errorCode.eOk,  value
