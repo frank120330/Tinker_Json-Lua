@@ -1,5 +1,6 @@
 local TkJson = require('source/TkJson')
 local TkTest = require('source/TkTest')
+local ProFi = require('ProFi')
 
 local TkParserTester = {}
 
@@ -43,7 +44,10 @@ TkParserTester.testParseFile = function(filename)
   local jsonFile = assert(io.open(filename, 'r'))
   local jsonString = jsonFile:read('a')
   local startClock = os.clock()
+  --ProFi:start()
   local result, value = TkJson.parse(jsonString)
+  --ProFi:stop()
+  --ProFi:writeReport(filename .. '-report.txt')
   local stopClock = os.clock()
   TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
   print(string.format("> Pressure Test - Filename: %s, Elapsed Time: %fs", filename, stopClock - startClock))

@@ -43,7 +43,7 @@ local parseObject
 --
 
 getNextChar = function()
-  gPointer = gPointer + #gNextChar
+  gPointer = gPointer + 1
   gNextChar = gIterator()
 end
 
@@ -395,7 +395,7 @@ TkJson.parse = function(jsonString)
   local result = TkJson.errorCode.eExpectValue
   local value = nil
   
-  gIterator = string.gmatch(jsonString, utf8.charpattern)
+  gIterator = string.gmatch(jsonString, '.')
   gNextChar = gIterator()
   gPointer = 1
   gString = jsonString

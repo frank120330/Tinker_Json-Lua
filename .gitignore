@@ -41,3 +41,13 @@ luac.out
 
 
 \.vscode/
+
+test/canada\.json-report\.txt
+
+test/citm_catalog\.json-report\.txt
+
+test/simple\.json-report\.txt
+
+test/twitter\.json-report\.txt
+
+ProFi\.lua
