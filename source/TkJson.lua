@@ -52,7 +52,8 @@ parseWhitespace = function()
     gNextChar == '\t' or
     gNextChar == '\n' or
     gNextChar == '\r' do
-    getNextChar()
+    gPointer = gPointer + 1
+    gNextChar = gIterator()
   end
 end
 
