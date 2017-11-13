@@ -43,7 +43,7 @@ local parseObject
 --
 
 getNextChar = function()
-  gPointer = gPointer + string.len(gNextChar)
+  gPointer = gPointer + #gNextChar
   gNextChar = gIterator()
 end
 
