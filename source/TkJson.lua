@@ -122,16 +122,18 @@ isDigit = function()
 end
 
 parseNumber = function()
-  if not isDigit() and gNextChar ~= '-' then
+  if gNextChar == nil or (gNextChar < '0' and gNextChar > '9' and gNextChar ~= '-') then
     return TkJson.errorCode.eInvalidValue, nil
   end
   local startPoint = gPointer
-  while isDigit() or
+  while gNextChar ~= nil and 
+    ((gNextChar >= '0' and 
+    gNextChar <= '9') or
     gNextChar == '+' or
     gNextChar == '-' or
     gNextChar == '.' or
     gNextChar == 'e' or
-    gNextChar == 'E' do
+    gNextChar == 'E') do
     gPointer = gPointer + 1
     gNextChar = gIterator()
   end
@@ -285,6 +287,7 @@ parseArray = function()
   local value = {
     __length = 0
   }
+  local length = 0
   
   gPointer = gPointer + 1
   gNextChar = gIterator()
@@ -300,14 +303,15 @@ parseArray = function()
     if result ~= TkJson.errorCode.eOk then
       return result, nil
     else
-      value.__length = value.__length + 1
-      value[value.__length] = element
+      length = length + 1
+      value[length] = element
       parseWhitespace()
       if gNextChar == ',' then
         gPointer = gPointer + 1
         gNextChar = gIterator()
         parseWhitespace()
       elseif gNextChar == ']' then
+        value.__length = length
         gPointer = gPointer + 1
         gNextChar = gIterator()
         return result, value
@@ -408,5 +412,7 @@ TkJson.parse = function(jsonString)
   end
   return result, value
 end
+
+TkJson.decode = TkJson.parse
 
 return TkJson
