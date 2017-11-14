@@ -18,6 +18,22 @@ TkJson.errorCode = {
   eMissCommaOrCurlyBracket = 14
 }
 
+-- TkJson.errorCode = {
+--   eOk = 'Parsed successfully',
+--   eExpectValue = 'Expect a value',
+--   eInvalidValue = 'Invalid value',
+--   eRootNotSingular = 'Root not singular',
+--   eNumberTooBig = 'Number too big',
+--   eMissQuotationMark = 'Miss quotation mark',
+--   eInvalidStringEscape = 'Invalid string escape',
+--   eInvalidStringChar = 'Invalid string char',
+--   eInvalidUnicodeHex = 'Invalid unicode hex',
+--   eMissCommaOrSquareBracket = 'Miss comma or square bracket',
+--   eMissKey = 'Miss key in key-value pair',
+--   eMissColon = 'Miss colon',
+--   eMissCommaOrCurlyBracket = 'Miss comma or curly bracket'
+-- }
+
 -- Global variables & functions declarations
 
 local gIterator = nil
@@ -25,14 +41,12 @@ local gNextChar = nil
 local gPointer = nil
 local gString = nil
 
-local getNextChar
+local parseError
 local parseWhitespace
 local parseValue
 local parseNull
 local parseTrue
 local parseFalse
-local isPlus
-local isDigit
 local parseNumber
 local decodeUtf8
 local encodeUtf8
@@ -42,9 +56,29 @@ local parseObject
 
 --
 
-getNextChar = function()
-  gPointer = gPointer + 1
-  gNextChar = gIterator()
+parseError = function(errorType)
+  local rowCount = 1
+  local colCount = 1
+  
+  local iterator = string.gmatch(gString, '.')
+  local nextChar = iterator()
+  local pointer = 1
+
+  while pointer < gPonter do
+    pointer = pointer + 1
+    nextChar = iterator()
+    if nextChar == '\n' then
+      rowCount = rowCount + 1
+      colCount = 1
+    else
+      colCount = colCount + 1
+    end
+  end
+
+  local errorMsg = string.format(
+    '> Error: Line %d Column %d - %s', rowCount, colCount, errorType
+  )
+  error(errorMsg)
 end
 
 parseWhitespace = function()
@@ -99,28 +133,6 @@ parseFalse = function()
   return TkJson.errorCode.eOk, false
 end
 
-local byteZero = string.byte('0')
-local byteOne = string.byte('1')
-local byteNine = string.byte('9')
-
-isPlus = function()
-  if gNextChar then
-    local byteCode = string.byte(gNextChar)
-    return (byteCode >= byteOne and byteCode <= byteNine)
-  else
-    return false
-  end
-end
-
-isDigit = function()
-  if gNextChar then
-    local byteCode = string.byte(gNextChar)
-    return (byteCode >= byteZero and byteCode <= byteNine)
-  else
-    return false
-  end
-end
-
 parseNumber = function()
   if gNextChar == nil or (gNextChar < '0' and gNextChar > '9' and gNextChar ~= '-') then
     return TkJson.errorCode.eInvalidValue, nil
@@ -149,6 +161,9 @@ parseNumber = function()
   end
 end
 
+local byteZero = string.byte('0')
+local byteOne = string.byte('1')
+local byteNine = string.byte('9')
 local byteUpperA = string.byte('A')
 local byteLowerA = string.byte('a')
 local byteUpperF = string.byte('F')
