@@ -8,13 +8,13 @@ local TestLiteral = function()
 end
 
 local TestIllegalLiteral = function()
-  TkParserTester.testParseError(TkJson.errorCode.eExpectValue, '')
-  TkParserTester.testParseError(TkJson.errorCode.eExpectValue, ' ')
+  TkParserTester.testParseError(TkJson.errorCode.eExpectValue, 1, 1, '')
+  TkParserTester.testParseError(TkJson.errorCode.eExpectValue, 1, 2, ' ')
 
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, 'nul')
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, '?')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, 1, 4, 'nul')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidValue, 1, 1, '?')
 
-  TkParserTester.testParseError(TkJson.errorCode.eRootNotSingular, 'null x')
+  TkParserTester.testParseError(TkJson.errorCode.eRootNotSingular, 1, 6, 'null x')
 end
 
 local TestNumber = function()
@@ -80,14 +80,14 @@ local TestString = function()
 end
 
 local TestIllegalString = function()
-  TkParserTester.testParseError(TkJson.errorCode.eMissQuotationMark, '\"')
-  TkParserTester.testParseError(TkJson.errorCode.eMissQuotationMark, '\"abc')
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, '\"\\v\"')
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, '\"\\;\"')
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, '\"\\0\"')
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, '\"\\x12\"')
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, '\"\x01\"')
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, '\"\x1F\"')
+  TkParserTester.testParseError(TkJson.errorCode.eMissQuotationMark, 1, 2, '\"')
+  TkParserTester.testParseError(TkJson.errorCode.eMissQuotationMark, 1, 5, '\"abc')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, 1, 3, '\"\\v\"')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, 1, 3, '\"\\;\"')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, 1, 3, '\"\\0\"')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, 1, 3, '\"\\x12\"')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, 1, 2, '\"\x01\"')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, 1, 2, '\"\x1F\"')
 end
 
 local TestArray = function()
@@ -108,10 +108,10 @@ local TestArray = function()
 end
 
 local TestIllegalArray = function()
-  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1')
-  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1}')
-  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, '[1 2')
-  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, '[[]')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, 1, 3, '[1')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, 1, 3, '[1}')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, 1, 4, '[1 2')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrSquareBracket, 1, 4, '[[]')
 end
 
 local TestObject = function()
@@ -141,22 +141,22 @@ local TestObject = function()
 end
 
 local TestIllegalObject = function()
-  TkParserTester.testParseError(TkJson.errorCode.eMissKey, '{:1,')
-  TkParserTester.testParseError(TkJson.errorCode.eMissKey, '{1:1,')
-  TkParserTester.testParseError(TkJson.errorCode.eMissKey, '{true:1,')
-  TkParserTester.testParseError(TkJson.errorCode.eMissKey, '{false:1,')
-  TkParserTester.testParseError(TkJson.errorCode.eMissKey, '{null:1,')
-  TkParserTester.testParseError(TkJson.errorCode.eMissKey, '{[]:1,')
-  TkParserTester.testParseError(TkJson.errorCode.eMissKey, '{{}:1,')
-  TkParserTester.testParseError(TkJson.errorCode.eMissKey, '{\"a\":1,')
+  TkParserTester.testParseError(TkJson.errorCode.eMissKey, 1, 2, '{:1,')
+  TkParserTester.testParseError(TkJson.errorCode.eMissKey, 1, 2, '{1:1,')
+  TkParserTester.testParseError(TkJson.errorCode.eMissKey, 1, 2, '{true:1,')
+  TkParserTester.testParseError(TkJson.errorCode.eMissKey, 1, 2, '{false:1,')
+  TkParserTester.testParseError(TkJson.errorCode.eMissKey, 1, 2, '{null:1,')
+  TkParserTester.testParseError(TkJson.errorCode.eMissKey, 1, 2, '{[]:1,')
+  TkParserTester.testParseError(TkJson.errorCode.eMissKey, 1, 2, '{{}:1,')
+  TkParserTester.testParseError(TkJson.errorCode.eMissKey, 1, 8, '{\"a\":1,')
 
-  TkParserTester.testParseError(TkJson.errorCode.eMissColon, '{\"a\"}')
-  TkParserTester.testParseError(TkJson.errorCode.eMissColon, '{\"a\",\"b\"}')
+  TkParserTester.testParseError(TkJson.errorCode.eMissColon, 1, 5, '{\"a\"}')
+  TkParserTester.testParseError(TkJson.errorCode.eMissColon, 1, 5, '{\"a\",\"b\"}')
 
-  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrCurlyBracket, '{\"a\":1')
-  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrCurlyBracket, '{\"a\":1]')
-  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrCurlyBracket, '{\"a\":1 \"b\"')
-  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrCurlyBracket, '{\"a\":{}')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrCurlyBracket, 1, 7, '{\"a\":1')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrCurlyBracket, 1, 7, '{\"a\":1]')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrCurlyBracket, 1, 8, '{\"a\":1 \"b\"')
+  TkParserTester.testParseError(TkJson.errorCode.eMissCommaOrCurlyBracket, 1, 8, '{\"a\":{}')
 end
 
 local TestParser = function()

@@ -4,39 +4,37 @@ local ProFi = require('ProFi')
 
 local TkParserTester = {}
 
-TkParserTester.testParseError = function(errorCode, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(errorCode, result)
-  TkTest.expectEqualLiteral(nil, value)
+TkParserTester.testParseError = function(errorCode, errorRow, errorCol, json)
+  local status, errorMsg = pcall(TkJson.parse, json)
+  local expectError = string.format(
+    '> Error: Line %d Column %d - %s', errorRow, errorCol, errorCode
+  )
+  TkTest.expectEqualLiteral(false, status)
+  TkTest.expectEqualString(expectError, errorMsg)
 end
 
 TkParserTester.testParseLiteral = function(literal, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
+  local value = TkJson.parse(json)
   TkTest.expectEqualLiteral(literal, value)
 end
 
 TkParserTester.testParseNumber = function(number, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
+  local value = TkJson.parse(json)
   TkTest.expectEqualNumber(number, value)
 end
 
 TkParserTester.testParseString = function(str, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
+  local value = TkJson.parse(json)
   TkTest.expectEqualString(str, value)
 end
 
 TkParserTester.testParseArray = function(array, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
+  local value = TkJson.parse(json)
   TkTest.expectEqualArray(array, value)
 end
 
 TkParserTester.testParseObject = function(object, json)
-  local result, value = TkJson.parse(json)
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
+  local value = TkJson.parse(json)
   TkTest.expectEqualObject(object, value)
 end
 
@@ -45,11 +43,10 @@ TkParserTester.testParseFile = function(filename)
   local jsonString = jsonFile:read('a')
   local startClock = os.clock()
   --ProFi:start()
-  local result, value = TkJson.parse(jsonString)
+  local value = TkJson.parse(jsonString)
   --ProFi:stop()
   --ProFi:writeReport(filename .. '-report.txt')
   local stopClock = os.clock()
-  TkTest.expectEqualInt(TkJson.errorCode.eOk, result)
   print(string.format("> Pressure Test - Filename: %s, Elapsed Time: %fs", filename, stopClock - startClock))
 end
 
