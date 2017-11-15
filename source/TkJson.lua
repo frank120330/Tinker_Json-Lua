@@ -134,19 +134,18 @@ parseFalse = function()
   return false
 end
 
+local numberString = {
+  ['0'] = true, ['1'] = true, ['2'] = true, ['3'] = true, ['4'] = true, 
+  ['5'] = true, ['6'] = true, ['7'] = true, ['8'] = true, ['9'] = true,
+  ['+'] = true, ['-'] = true, ['.'] = true, ['e'] = true, ['E'] = true
+}
+
 parseNumber = function()
   if gNextChar == nil or (gNextChar < '0' and gNextChar > '9' and gNextChar ~= '-') then
     parseError(TkJson.errorCode.eInvalidValue)
   end
   local startPoint = gPointer
-  while gNextChar ~= nil and 
-    ((gNextChar >= '0' and 
-    gNextChar <= '9') or
-    gNextChar == '+' or
-    gNextChar == '-' or
-    gNextChar == '.' or
-    gNextChar == 'e' or
-    gNextChar == 'E') do
+  while numberString[gNextChar] do
     gPointer = gPointer + 1
     gNextChar = gIterator()
   end

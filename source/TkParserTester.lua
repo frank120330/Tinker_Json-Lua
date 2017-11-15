@@ -7,7 +7,7 @@ local TkParserTester = {}
 TkParserTester.testParseError = function(errorCode, errorRow, errorCol, json)
   local status, errorMsg = pcall(TkJson.parse, json)
   local expectError = string.format(
-    '> Error: Line %d Column %d - %s', errorRow, errorCol, errorCode
+    '# Error: Line %d Column %d - %s', errorRow, errorCol, errorCode
   )
   TkTest.expectEqualLiteral(false, status)
   TkTest.expectEqualString(expectError, errorMsg)
