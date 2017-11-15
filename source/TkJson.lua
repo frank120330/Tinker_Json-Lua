@@ -1,23 +1,5 @@
 local TkJson = {}
 
--- TkJson.errorCode = {
---   eOk = 0,
---   eNotWhitespace = 1,
---   eExpectValue = 2,
---   eInvalidValue = 3,
---   eRootNotSingular = 4,
---   eNumberTooBig = 5,
---   eMissQuotationMark = 6,
---   eInvalidStringEscape = 7,
---   eInvalidStringChar = 8,
---   eInvalidUnicodeHex = 9,
---   eInvalidUnicodeSurrogate = 10,
---   eMissCommaOrSquareBracket = 11,
---   eMissKey = 12,
---   eMissColon = 13,
---   eMissCommaOrCurlyBracket = 14
--- }
-
 TkJson.errorCode = {
   eOk = 'Parsed successfully',
   eExpectValue = 'Expect a value',
@@ -49,8 +31,7 @@ local parseNull
 local parseTrue
 local parseFalse
 local parseNumber
-local decodeUtf8
-local encodeUtf8
+local parseUnicode
 local parseString
 local parseArray
 local parseObject
@@ -82,14 +63,14 @@ parseError = function(errorType)
   error(errorMsg, 0)
 end
 
-local whitespaceString = {
+local whitespaceChar = {
   [' '] = true,
   ['\t'] = true,
   ['\n'] = true,
   ['\r'] = true
 }
 parseWhitespace = function()
-  while whitespaceString[gNextChar] do
+  while whitespaceChar[gNextChar] do
     gPointer = gPointer + 1
     gNextChar = gIterator()
   end
@@ -195,94 +176,111 @@ decodeUtf8 = function()
 end
 
 encodeUtf8 = function(hex)
-  local value = nil
-  if hex <= 0x7F then
-    value = string.char(hex & 0xFF)
-  elseif hex <= 0x7FF then
-    value = string.char(
-      (0xC0 | ((hex >> 6) & 0xFF)), 
-      (0x80 | (hex & 0x3F))
-    )
-  elseif hex <= 0xFFFF then
-    value = string.char(
-      (0xE0 | ((hex >> 12) & 0xFF)),
-      (0x80 | ((hex >> 6) & 0x3F)),
-      (0x80 | (hex & 0x3F))
-    )
-  else
-    value = string.char(
-      (0xF0 | ((hex >> 18) & 0xFF)),
-      (0x80 | ((hex >> 12) & 0x3F)),
-      (0x80 | ((hex >> 6) & 0x3F)),
-      (0x80 | (hex & 0x3F))
-    )
-  end
-  return value
 end
 
-local escapeChar = {
+parseUnicode = function(utf8String)
+  local hex1 = tonumber(string.sub(utf8String, 3, 6), 16)
+  local hex2 = tonumber(string.sub(utf8String, 9, 12), 16)
+  if hex2 then
+    hex1 = (((hex1 - 0xD800) << 10) | (hex2 - 0xDC00)) + 0x10000
+  end
+
+  if hex1 <= 0x7F then
+    return string.char(hex1 & 0xFF)
+  elseif hex1 <= 0x7FF then
+    return string.char(
+      (0xC0 | ((hex1 >> 6) & 0xFF)), 
+      (0x80 | (hex1 & 0x3F))
+    )
+  elseif hex1 <= 0xFFFF then
+    return string.char(
+      (0xE0 | ((hex1 >> 12) & 0xFF)),
+      (0x80 | ((hex1 >> 6) & 0x3F)),
+      (0x80 | (hex1 & 0x3F))
+    )
+  else
+    return string.char(
+      (0xF0 | ((hex1 >> 18) & 0xFF)),
+      (0x80 | ((hex1 >> 12) & 0x3F)),
+      (0x80 | ((hex1 >> 6) & 0x3F)),
+      (0x80 | (hex1 & 0x3F))
+    )
+  end
+end
+
+local escapeAlpha = {
   ['\"'] = '\"', ['\\'] = '\\', ['/'] = '/',
   ['b'] = '\b', ['f'] = '\f', ['n'] = '\n',
   ['r'] = '\r', ['t'] = '\t'
+}
+local escapeChar = {
+  ['\\\"'] = '\"', ['\\\\'] = '\\', ['\\/'] = '/',
+  ['\\b'] = '\b', ['\\f'] = '\f', ['\\n'] = '\n',
+  ['\\r'] = '\r', ['\\t'] = '\t'
 }
 parseString = function()
   local value = ''
   local startPoint = gPointer + 1
   local stopPoint = gPointer + 1
+  local hasSurrogate = false
+  local hasUnicode = false
+  local hasEscape = false
 
   while true do
     gPointer = gPointer + 1
     gNextChar = gIterator()
-    if gNextChar == nil then
-      parseError(TkJson.errorCode.eMissQuotationMark)
-    elseif gNextChar == '"' then
+    if gNextChar == '"' then
       stopPoint = gPointer - 1
-      value = value .. string.sub(gString, startPoint, stopPoint)
+      value = string.sub(gString, startPoint, stopPoint)
+      if string.find(value, '[\x01-\x1F]') then
+        parseError(TkJson.errorCode.eInvalidStringChar)
+      end
+      if hasSurrogate then
+        value = string.gsub(value, '\\u[dD][89AaBb]..\\u....', parseUnicode)
+      end
+      if hasUnicode then
+        value = string.gsub(value, '\\u....', parseUnicode)
+      end
+      if hasEscape then
+        value = string.gsub(value, '\\.', escapeChar)
+      end
       gPointer = gPointer + 1
       gNextChar = gIterator()
       return value
     elseif gNextChar == '\\' then
-      stopPoint = gPointer - 1
-      value = value .. string.sub(gString, startPoint, stopPoint)
       gPointer = gPointer + 1
       gNextChar = gIterator()
-      if escapeChar[gNextChar] then
-        value = value .. escapeChar[gNextChar]
-      elseif gNextChar == 'u' then
-        local hex1 = nil
-        local hex2 = nil
-        hex1 = decodeUtf8()
-        if hex1 == nil then
+
+      if gNextChar == 'u' then
+        local hexString = string.sub(gString, gPointer + 1, gPointer + 4)
+        if not string.find(hexString, '%x%x%x%x') then
           parseError(TkJson.errorCode.eInvalidUnicodeHex)
         end
-        if hex1 >= 0xD800 and hex1 <= 0xDBFF then
-          gPointer = gPointer + 1
-          gNextChar = gIterator()
-          if gNextChar ~= '\\' then
-            parseError(TkJson.errorCode.eInvalidUnicodeSurrogate)
+        if string.find(hexString, '^[Dd][89AaBb]') then
+          hasSurrogate = true
+          for i = 1, 10 do
+            gPointer = gPointer + 1
+            gNextChar = gIterator()
           end
-          gPointer = gPointer + 1
-          gNextChar = gIterator()
-          if gNextChar ~= 'u' then
-            parseError(TkJson.errorCode.eInvalidUnicodeSurrogate)
+        else
+          hasUnicode = true
+          for i = 1, 4 do
+            gPointer = gPointer + 1
+            gNextChar = gIterator()
           end
-          hex2 = decodeUtf8()
-          if hex2 == nil then
-            parseError(TkJson.errorCode.eInvalidUnicodeHex)
-          end
-          if hex2 < 0xDC00 or  hex2 > 0xDFFF then
-            parseError(TkJson.errorCode.eInvalidUnicodeSurrogate)
-          end
-          hex1 = (((hex1 - 0xD800) << 10) | (hex2 - 0xDC00)) + 0x10000
         end
-        value = value .. encodeUtf8(hex1)
       else
-        parseError(TkJson.errorCode.eInvalidStringEscape)
+        if not escapeAlpha[gNextChar] then
+          parseError(TkJson.errorCode.eInvalidStringEscape)
+        else
+          hasEscape = true
+        end
       end
-      startPoint = gPointer + 1
     else
-      if string.byte(gNextChar) < 0x20 then
-        parseError(TkJson.errorCode.eInvalidStringChar)
+      if gNextChar == nil then
+        parseError(TkJson.errorCode.eMissQuotationMark)
+      -- elseif string.byte(gNextChar) < 0x20 then
+      --   parseError(TkJson.errorCode.eInvalidStringChar)
       end
     end
   end

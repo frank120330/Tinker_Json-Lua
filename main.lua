@@ -86,8 +86,8 @@ local TestIllegalString = function()
   TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, 1, 3, '\"\\;\"')
   TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, 1, 3, '\"\\0\"')
   TkParserTester.testParseError(TkJson.errorCode.eInvalidStringEscape, 1, 3, '\"\\x12\"')
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, 1, 2, '\"\x01\"')
-  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, 1, 2, '\"\x1F\"')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, 1, 3, '\"\x01\"')
+  TkParserTester.testParseError(TkJson.errorCode.eInvalidStringChar, 1, 3, '\"\x1F\"')
 end
 
 local TestArray = function()
