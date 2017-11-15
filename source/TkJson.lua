@@ -82,22 +82,25 @@ parseError = function(errorType)
   error(errorMsg, 0)
 end
 
+local whitespaceString = {
+  [' '] = true,
+  ['\t'] = true,
+  ['\n'] = true,
+  ['\r'] = true
+}
 parseWhitespace = function()
-  while gNextChar == ' ' or
-    gNextChar == '\t' or
-    gNextChar == '\n' or
-    gNextChar == '\r' do
+  while whitespaceString[gNextChar] do
     gPointer = gPointer + 1
     gNextChar = gIterator()
   end
 end
 
-local nullString = {
+local nullChar = {
   'n', 'u', 'l', 'l'
 }
 parseNull = function()
   for i = 1, 4 do
-    if gNextChar ~= nullString[i] then
+    if gNextChar ~= nullChar[i] then
       parseError(TkJson.errorCode.eInvalidValue)
     end
     gPointer = gPointer + 1
@@ -106,12 +109,12 @@ parseNull = function()
   return nil
 end
 
-local trueString = {
+local trueChar = {
   't', 'r', 'u', 'e'
 }
 parseTrue = function()
   for i = 1, 4 do
-    if gNextChar ~= trueString[i] then
+    if gNextChar ~= trueChar[i] then
       parseError(TkJson.errorCode.eInvalidValue)
     end
     gPointer = gPointer + 1
@@ -120,12 +123,12 @@ parseTrue = function()
   return true
 end
 
-local falseString = {
+local falseChar = {
   'f', 'a', 'l', 's', 'e'
 }
 parseFalse = function()
   for i = 1, 5 do
-    if gNextChar ~= falseString[i] then
+    if gNextChar ~= falseChar[i] then
       parseError(TkJson.errorCode.eInvalidValue)
     end
     gPointer = gPointer + 1
@@ -134,18 +137,15 @@ parseFalse = function()
   return false
 end
 
-local numberString = {
+local numberChar = {
   ['0'] = true, ['1'] = true, ['2'] = true, ['3'] = true, ['4'] = true, 
   ['5'] = true, ['6'] = true, ['7'] = true, ['8'] = true, ['9'] = true,
   ['+'] = true, ['-'] = true, ['.'] = true, ['e'] = true, ['E'] = true
 }
 
 parseNumber = function()
-  if gNextChar == nil or (gNextChar < '0' and gNextChar > '9' and gNextChar ~= '-') then
-    parseError(TkJson.errorCode.eInvalidValue)
-  end
   local startPoint = gPointer
-  while numberString[gNextChar] do
+  while numberChar[gNextChar] do
     gPointer = gPointer + 1
     gNextChar = gIterator()
   end
@@ -220,6 +220,11 @@ encodeUtf8 = function(hex)
   return value
 end
 
+local escapeChar = {
+  ['\"'] = '\"', ['\\'] = '\\', ['/'] = '/',
+  ['b'] = '\b', ['f'] = '\f', ['n'] = '\n',
+  ['r'] = '\r', ['t'] = '\t'
+}
 parseString = function()
   local value = ''
   local startPoint = gPointer + 1
@@ -241,22 +246,8 @@ parseString = function()
       value = value .. string.sub(gString, startPoint, stopPoint)
       gPointer = gPointer + 1
       gNextChar = gIterator()
-      if gNextChar == '\"' then
-        value = value .. '\"'
-      elseif gNextChar == '\\' then
-        value = value .. '\\'
-      elseif gNextChar == '/' then
-        value = value .. '/'
-      elseif gNextChar == 'b' then
-        value = value .. '\b'
-      elseif gNextChar == 'f' then
-        value = value .. '\f'
-      elseif gNextChar == 'n' then
-        value = value .. '\n'
-      elseif gNextChar == 'r' then
-        value = value .. '\r'
-      elseif gNextChar == 't' then
-        value = value .. '\t'
+      if escapeChar[gNextChar] then
+        value = value .. escapeChar[gNextChar]
       elseif gNextChar == 'u' then
         local hex1 = nil
         local hex2 = nil
@@ -375,23 +366,23 @@ parseObject = function()
   end
 end
 
+local valueChar = {
+  ['n'] = parseNull, ['t'] = parseTrue, ['f'] = parseFalse,
+  ['"'] = parseString, ['['] = parseArray, ['{'] = parseObject, 
+  ['-'] = parseNumber, ['0'] = parseNumber, ['1'] = parseNumber,
+  ['2'] = parseNumber, ['3'] = parseNumber, ['4'] = parseNumber,
+  ['5'] = parseNumber, ['6'] = parseNumber, ['7'] = parseNumber,
+  ['8'] = parseNumber, ['9'] = parseNumber
+}
 parseValue = function()
-  if gNextChar == nil then
-    parseError(TkJson.errorCode.eExpectValue)
-  elseif gNextChar == 'n' then
-    return parseNull()
-  elseif gNextChar == 't' then
-    return parseTrue()
-  elseif gNextChar == 'f' then
-    return parseFalse()
-  elseif gNextChar == '"' then
-    return parseString()
-  elseif gNextChar == '[' then
-    return parseArray()
-  elseif gNextChar == '{' then
-    return parseObject()
+  if valueChar[gNextChar] then
+    return valueChar[gNextChar]()
   else
-    return parseNumber()
+    if gNextChar == nil then
+      parseError(TkJson.errorCode.eExpectValue)
+    else
+      parseError(TkJson.errorCode.eInvalidValue)
+    end
   end
 end
 
