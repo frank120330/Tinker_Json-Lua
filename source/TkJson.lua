@@ -142,42 +142,6 @@ parseNumber = function()
   end
 end
 
-local byteZero = string.byte('0')
-local byteOne = string.byte('1')
-local byteNine = string.byte('9')
-local byteUpperA = string.byte('A')
-local byteLowerA = string.byte('a')
-local byteUpperF = string.byte('F')
-local byteLowerF = string.byte('f')
-
-decodeUtf8 = function()
-  local hex = 0
-  local byte = 0
-  for i = 1, 4 do
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
-    if gNextChar == nil then
-      return nil
-    else
-      byte = string.byte(gNextChar)
-      hex = hex << 4
-      if byte >= byteZero and byte <= byteNine then
-        hex = hex | (byte - byteZero)
-      elseif byte >= byteUpperA and byte <= byteUpperF then
-        hex = hex | (byte - byteUpperA + 10)
-      elseif byte >= byteLowerA and byte <= byteLowerF then
-        hex = hex | (byte - byteLowerA + 10)
-      else
-        return nil
-      end
-    end
-  end
-  return hex
-end
-
-encodeUtf8 = function(hex)
-end
-
 parseUnicode = function(utf8String)
   local hex1 = tonumber(string.sub(utf8String, 3, 6), 16)
   local hex2 = tonumber(string.sub(utf8String, 9, 12), 16)
@@ -209,9 +173,9 @@ parseUnicode = function(utf8String)
 end
 
 local escapeAlpha = {
-  ['\"'] = '\"', ['\\'] = '\\', ['/'] = '/',
-  ['b'] = '\b', ['f'] = '\f', ['n'] = '\n',
-  ['r'] = '\r', ['t'] = '\t'
+  ['"'] = true, ['\\'] = true, ['/'] = true,
+  ['b'] = true, ['f'] = true, ['n'] = true,
+  ['r'] = true, ['t'] = true
 }
 local escapeChar = {
   ['\\\"'] = '\"', ['\\\\'] = '\\', ['\\/'] = '/',
@@ -279,8 +243,6 @@ parseString = function()
     else
       if gNextChar == nil then
         parseError(TkJson.errorCode.eMissQuotationMark)
-      -- elseif string.byte(gNextChar) < 0x20 then
-      --   parseError(TkJson.errorCode.eInvalidStringChar)
       end
     end
   end
