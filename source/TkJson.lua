@@ -1,5 +1,9 @@
 local TkJson = {}
 
+--[[
+  Constants for JSON parser
+--]]
+
 TkJson.errorCode = {
   eOk = 'Parsed successfully',
   eExpectValue = 'Expect a value',
@@ -17,7 +21,9 @@ TkJson.errorCode = {
   eMissCommaOrCurlyBracket = 'Miss comma or curly bracket'
 }
 
--- Global variables & functions declarations
+--[[
+  Global variables & functions used by JSON parser
+--]]
 
 local gIterator = nil
 local gNextChar = nil
@@ -35,8 +41,11 @@ local parseUnicode
 local parseString
 local parseArray
 local parseObject
+local parse
 
---
+--[[
+  Parsing functions
+--]]
 
 parseError = function(errorType)
   local rowCount = 1
@@ -58,16 +67,15 @@ parseError = function(errorType)
   end
 
   local errorMsg = string.format(
-    '# Error: Line %d Column %d - %s', rowCount, colCount, errorType
+    '# Error: Line %d Column %d - %s', 
+    rowCount, colCount, errorType
   )
   error(errorMsg, 0)
 end
 
 local whitespaceChar = {
-  [' '] = true,
-  ['\t'] = true,
-  ['\n'] = true,
-  ['\r'] = true
+  [' '] = true, ['\t'] = true,
+  ['\n'] = true, ['\r'] = true
 }
 parseWhitespace = function()
   while whitespaceChar[gNextChar] do
@@ -172,12 +180,12 @@ parseUnicode = function(utf8String)
   end
 end
 
-local escapeAlpha = {
+local escapeChar = {
   ['"'] = true, ['\\'] = true, ['/'] = true,
   ['b'] = true, ['f'] = true, ['n'] = true,
   ['r'] = true, ['t'] = true
 }
-local escapeChar = {
+local escapeValue = {
   ['\\\"'] = '\"', ['\\\\'] = '\\', ['\\/'] = '/',
   ['\\b'] = '\b', ['\\f'] = '\f', ['\\n'] = '\n',
   ['\\r'] = '\r', ['\\t'] = '\t'
@@ -206,7 +214,7 @@ parseString = function()
         value = string.gsub(value, '\\u....', parseUnicode)
       end
       if hasEscape then
-        value = string.gsub(value, '\\.', escapeChar)
+        value = string.gsub(value, '\\.', escapeValue)
       end
       gPointer = gPointer + 1
       gNextChar = gIterator()
@@ -234,7 +242,7 @@ parseString = function()
           end
         end
       else
-        if not escapeAlpha[gNextChar] then
+        if not escapeChar[gNextChar] then
           parseError(TkJson.errorCode.eInvalidStringEscape)
         else
           hasEscape = true
@@ -336,7 +344,8 @@ local valueChar = {
 }
 parseValue = function()
   if valueChar[gNextChar] then
-    return valueChar[gNextChar]()
+    local parseFunc = valueChar[gNextChar]
+    return parseFunc()
   else
     if gNextChar == nil then
       parseError(TkJson.errorCode.eExpectValue)
@@ -346,7 +355,7 @@ parseValue = function()
   end
 end
 
-TkJson.parse = function(jsonString)
+parse = function(jsonString)
   local value = nil
   
   gIterator = string.gmatch(jsonString, '.')
@@ -364,6 +373,103 @@ TkJson.parse = function(jsonString)
   return value
 end
 
-TkJson.decode = TkJson.parse
+--[[
+  JSON Parser API exposed to users  
+--]]
+
+TkJson.parse = parse
+TkJson.decode = parse
+
+--[[
+  Global Constants & functions used by Stringifier
+--]]
+
+local stringifyNil
+local stringifyBoolean
+local stringifyNumber
+local stringifyString
+local stringifyTable
+local stringifyArray
+local stringifyObject
+local stringify
+
+--[[
+  Stringification functions
+--]]
+
+stringifyNil = function(value)
+  return 'null'
+end
+
+stringifyBoolean = function(value)
+  if value then
+    return 'true'
+  else
+    return 'false'
+  end
+end
+
+stringifyNumber = function(value)
+  return tostring(value)
+end
+
+stringifyString = function(value)
+  return value
+end
+
+stringifyArray = function(value)
+  local str = '['
+  local length = value.__length
+  for i = 1, length do
+    str = str .. stringify(value[i]) .. ','
+  end
+  if length > 0 then
+    str = string.sub(str, 1, -2)
+  end
+  str = str .. ']'
+  return str
+end
+
+stringifyObject = function(value)
+  local str = '{'
+  for k, v in pairs(value) do
+    str = str .. stringify(k)
+    str = str .. ':'
+    str = str .. stringify(v)
+    str = str .. ','
+  end
+  if string.sub(str, -1) == ',' then
+    str = string.sub(str, 1, -2)
+  end
+  str = str .. '}'
+  return str
+end
+
+stringifyTable = function(value)
+  if value.__length then
+    return stringifyArray(value)
+  else
+    return stringifyObject(value)
+  end
+end
+
+local stringifyChar = {
+  ['nil'] = stringifyNil, 
+  ['boolean'] = stringifyBoolean,
+  ['number'] = stringifyNumber,
+  ['string'] = stringifyString,
+  ['table'] = stringifyTable
+}
+stringify = function(value)
+  if stringifyChar[type(value)] then
+    local stringifyFunc = stringifyChar[type(value)]
+    return stringifyFunc(value)
+  else
+    error('# Error - Invalid data type!')
+  end
+end
+
+TkJson.stringify = stringify
+TkJson.encode = stringify
 
 return TkJson

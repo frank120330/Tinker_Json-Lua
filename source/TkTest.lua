@@ -1,9 +1,11 @@
 local TkTest = {}
 
 TkTest.expectEqual = function(equality, expect, actual, format)
-  -- print(expect, actual)
   if not equality then
-    local template = string.format('> Test Failure - Expect: %s, Actual: %s', format, format)
+    local template = string.format(
+      '> Test Failure - Expect: %s, Actual: %s', 
+      format, format
+    )
     local errorMsg = string.format(template, expect, actual)
     error(errorMsg)
   end
