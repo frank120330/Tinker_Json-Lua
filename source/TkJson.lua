@@ -131,7 +131,6 @@ local numberChar = {
   ['5'] = true, ['6'] = true, ['7'] = true, ['8'] = true, ['9'] = true,
   ['+'] = true, ['-'] = true, ['.'] = true, ['e'] = true, ['E'] = true
 }
-
 parseNumber = function()
   local startPoint = gPointer
   while numberChar[gNextChar] do
