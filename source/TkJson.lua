@@ -4,6 +4,8 @@ local TkJson = {}
   Constants for JSON parser
 --]]
 
+TkJson.null = function() {}
+
 TkJson.errorCode = {
   eOk = 'Parsed successfully',
   eExpectValue = 'Expect a value',
@@ -95,7 +97,7 @@ parseNull = function()
     gPointer = gPointer + 1
     gNextChar = gIterator()
   end
-  return nil
+  return TkJson.null
 end
 
 local trueChar = {
