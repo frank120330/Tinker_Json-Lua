@@ -26,5 +26,12 @@ local BenchmarkDecoder = function()
   end
 end
 
+local BenchmarkEncoder = function()
+  for key, value in pairs(fileArray) do
+    TkBench.testAllEncode(value)
+  end
+end
+
 RegisterLibrary()
-BenchmarkDecoder()
+-- BenchmarkDecoder()
+BenchmarkEncoder()
