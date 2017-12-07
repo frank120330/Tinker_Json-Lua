@@ -11,6 +11,11 @@ TkTest.expectEqual = function(equality, expect, actual, format)
   end
 end
 
+TkTest.expectEqualNull = function(expect, actual)
+  local equality = (expect == actual)
+  TkTest.expectEqual(equality, 'null', actual, '%s')
+end
+
 TkTest.expectEqualInt = function(expect, actual)
   local equality = (expect == actual)
   TkTest.expectEqual(equality, expect, actual, '%d')
@@ -38,7 +43,10 @@ TkTest.expectEqualArray = function(expect, actual)
   for i = 1, expect.__length do
     local expectValue = expect[i]
     local actualValue = actual[i]
-    if type(expectValue) == 'nil' or type(expectValue) == 'boolean' then
+    if type(expectValue) == 'function' then
+      TkTest.expectEqualNull(expectValue, actualValue)
+    elseif type(expectValue) == 'nil' or 
+      type(expectValue) == 'boolean' then
       TkTest.expectEqualLiteral(expectValue, actualValue)
     elseif type(expectValue) == 'number' then
       TkTest.expectEqualNumber(expectValue, actualValue)
@@ -59,7 +67,10 @@ end
 TkTest.expectEqualObject = function(expect, actual)
   for key, value in pairs(expect) do
     local another = actual[key]
-    if type(value) == 'nil' or type(value) == 'boolean' then
+    if type(value) == 'function' then
+      TkTest.expectEqualNull(value, another)
+    elseif type(value) == 'nil' or 
+      type(value) == 'boolean' then
       TkTest.expectEqualLiteral(value, another)
     elseif type(value) == 'number' then
       TkTest.expectEqualNumber(value, another)

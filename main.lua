@@ -2,7 +2,7 @@ local TkJson = require('source/TkJson')
 local TkDriver = require('source/TkDriver')
 
 local TestLiteral = function()
-  TkDriver.testParseLiteral(nil, 'null')
+  TkDriver.testParseNull('null')
   TkDriver.testParseLiteral(true, 'true')
   TkDriver.testParseLiteral(false, 'false')
 end
@@ -92,7 +92,7 @@ end
 
 local TestArray = function()
   TkDriver.testParseArray(
-    { nil, false, true, 123, 'abc', __length = 5 }, 
+    { TkJson.null, false, true, 123, 'abc', __length = 5 }, 
     '[ null , false , true , 123 , \"abc\" ]'
   )
   TkDriver.testParseArray({ __length = 0 }, '[ ]')
@@ -118,7 +118,7 @@ local TestObject = function()
   TkDriver.testParseObject({}, '{}')
   TkDriver.testParseObject(
     {
-      ['n'] = nil,
+      ['n'] = TkJson.null,
       ['f'] = false,
       ['t'] = true,
       ['i'] = 123,
@@ -182,4 +182,4 @@ local TestFile = function()
 end
 
 TestParser()
-TestFile()
+-- TestFile()

@@ -13,6 +13,11 @@ TkDriver.testParseError = function(errorCode, errorRow, errorCol, json)
   TkTest.expectEqualString(expectError, errorMsg)
 end
 
+TkDriver.testParseNull = function(json)
+  local value = TkJson.parse(json)
+  TkTest.expectEqualNull(TkJson.null, value)
+end
+
 TkDriver.testParseLiteral = function(literal, json)
   local value = TkJson.parse(json)
   TkTest.expectEqualLiteral(literal, value)

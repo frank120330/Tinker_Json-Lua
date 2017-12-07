@@ -1,15 +1,25 @@
 local TkBench = {}
 
-TkBench.parserName = nil
-TkBench.parserFunction = nil
+TkBench.libArray = {}
 
-TkBench.registerParser = function(parserName)
-  local parserLibrary = require(parserName)
-  TkBench.parserName = parserName
-  TkBench.parserFunction = parserLibrary.decode
+TkBench.resetBench = function()
+  TkBench.libArray = {}
 end
 
-TkBench.benchParser = function(filename)
+TkBench.registerLibrary = function(libName)
+  local libObject = {}
+  libObject.name = libName
+  libObject.library = require(libObject.name)
+  if libObject.library then
+    libObject.decoder = libObject.library.decode
+    libObject.encoder = libObject.library.encode
+    table.insert(TkBench.libArray, libObject)
+  else
+    print('Load library `' + libName + '` failed!')
+  end
+end
+
+TkBench.testDecode = function(library, filename)
   local jsonFile = assert(io.open(filename, 'r'))
   local jsonString = jsonFile:read('a')
 
@@ -17,7 +27,7 @@ TkBench.benchParser = function(filename)
   local totalCount = 10
   for i = 1, totalCount do
     local startClock = os.clock()
-    local value = TkBench.parserFunction(jsonString)
+    local value = library.decoder(jsonString)
     local stopClock = os.clock()
     totalTime = totalTime + (stopClock - startClock)
   end 
@@ -25,7 +35,19 @@ TkBench.benchParser = function(filename)
   print(
     string.format(
       "> Pressure Test - JSON Parser: %s, Filename: %s, Elapsed Time: %fs", 
-      TkBench.parserName, filename, totalTime
+      library.name, filename, totalTime
     )
   )
+
+  return totalTime
 end
+
+
+TkBench.testAllDecode = function(filename)
+  for key, library in pairs(TkBench.libArray) do
+    TkBench.testDecode(library, filename)
+  end
+  print('--------------------------------------------------------------')
+end
+
+return TkBench
