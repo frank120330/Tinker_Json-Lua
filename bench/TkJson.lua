@@ -414,8 +414,22 @@ encodeNumber = function(value)
   return string.format('%.17g', value)
 end
 
+local stringValue = {
+  -- ['"'] = true, ['\\'] = true, ['/'] = true,
+  -- ['b'] = true, ['f'] = true, ['n'] = true,
+  -- ['r'] = true, ['t'] = true, ['u'] = true
+  ['\"'] = '\\"', ['\\'] = '\\\\', ['/'] = '/',
+  ['\b'] = '\\b', ['\f'] = '\\f', ['\n'] = '\\n',
+  ['\r'] = '\\r', ['\t'] = '\\t'
+}
 encodeString = function(value)
-  return '"' .. value .. '"'
+  local replacer = function(ch)
+    return string.format('\\u%04X', string.byte(ch))
+  end
+
+  local result = '"' .. string.gsub(value, '.', stringValue) .. '"'
+  result = string.gsub(result, '[\x00-\x1F]', replacer)
+  return result
 end
 
 encodeArray = function(value)
