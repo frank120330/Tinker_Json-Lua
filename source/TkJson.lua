@@ -420,12 +420,10 @@ local stringValue = {
   ['\r'] = '\\r', ['\t'] = '\\t'
 }
 local utf8Replacer = function(ch)
-  return string.format('\\u%04X', string.byte(ch))
+  return stringValue[ch] or string.format('\\u%04X', string.byte(ch))
 end
 encodeString = function(value)
-  local result = '"' .. string.gsub(value, '[\"\\/\b\f\n\r\t]', stringValue) .. '"'
-  result = string.gsub(result, '[\x00-\x1F]', utf8Replacer)
-  return result
+  return '"' .. string.gsub(value, '[\x00-\x1F\\"]', utf8Replacer) .. '"'
 end
 
 encodeArray = function(value)
