@@ -33,5 +33,5 @@ local BenchmarkEncoder = function()
 end
 
 RegisterLibrary()
--- BenchmarkDecoder()
+BenchmarkDecoder()
 BenchmarkEncoder()
