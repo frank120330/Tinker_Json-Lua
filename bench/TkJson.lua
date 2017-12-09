@@ -422,13 +422,12 @@ local stringValue = {
   ['\b'] = '\\b', ['\f'] = '\\f', ['\n'] = '\\n',
   ['\r'] = '\\r', ['\t'] = '\\t'
 }
+local utf8Replacer = function(ch)
+  return string.format('\\u%04X', string.byte(ch))
+end
 encodeString = function(value)
-  local replacer = function(ch)
-    return string.format('\\u%04X', string.byte(ch))
-  end
-
-  local result = '"' .. string.gsub(value, '.', stringValue) .. '"'
-  result = string.gsub(result, '[\x00-\x1F]', replacer)
+  local result = '"' .. string.gsub(value, '[\"\\/\b\f\n\r\t]', stringValue) .. '"'
+  result = string.gsub(result, '[\x00-\x1F]', utf8Replacer)
   return result
 end
 
@@ -465,8 +464,8 @@ local encodeChar = {
   ['table'] = encodeTable
 }
 encode = function(value)
-  if encodeChar[type(value)] then
-    local encodeFunc = encodeChar[type(value)]
+  local encodeFunc = encodeChar[type(value)]
+  if encodeFunc then
     return encodeFunc(value)
   else
     error('# Error: Invalid data type ' .. tostring(value))

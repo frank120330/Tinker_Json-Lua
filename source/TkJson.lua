@@ -415,9 +415,6 @@ encodeNumber = function(value)
 end
 
 local stringValue = {
-  -- ['"'] = true, ['\\'] = true, ['/'] = true,
-  -- ['b'] = true, ['f'] = true, ['n'] = true,
-  -- ['r'] = true, ['t'] = true, ['u'] = true
   ['\"'] = '\\"', ['\\'] = '\\\\', ['/'] = '/',
   ['\b'] = '\\b', ['\f'] = '\\f', ['\n'] = '\\n',
   ['\r'] = '\\r', ['\t'] = '\\t'
@@ -464,8 +461,8 @@ local encodeChar = {
   ['table'] = encodeTable
 }
 encode = function(value)
-  if encodeChar[type(value)] then
-    local encodeFunc = encodeChar[type(value)]
+  local encodeFunc = encodeChar[type(value)]
+  if encodeFunc then
     return encodeFunc(value)
   else
     error('# Error: Invalid data type ' .. tostring(value))
