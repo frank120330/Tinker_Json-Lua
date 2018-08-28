@@ -23,11 +23,6 @@ TkJson.ErrorCode = {
 }
 
 TkJson.null = {}
-
-local null_meta_table = {}
-function null_meta_table.__newindex(dict, key, value)
-  error('> Error: TkJson.null is immutable!')
-end
 setmetatable(TkJson.null, {
   __newindex = function(dict, key, value)
     error('> Error: TkJson.null is immutable!')
@@ -127,6 +122,29 @@ function DecodeFalse()
     g_next_char = g_iterator()
   end
   return false
+end
+
+local number_char = {
+  ['0'] = true, ['1'] = true, ['2'] = true, ['3'] = true, ['4'] = true, 
+  ['5'] = true, ['6'] = true, ['7'] = true, ['8'] = true, ['9'] = true,
+  ['+'] = true, ['-'] = true, ['.'] = true, ['e'] = true, ['E'] = true
+}
+decodeNumber = function()
+  local start_point = g_pointer
+  while numberChar[gNextChar] do
+    gPointer = gPointer + 1
+    gNextChar = gIterator()
+  end
+
+  local stopPoint = gPointer - 1
+  local value = tonumber(string.sub(gString, startPoint, stopPoint))
+  if value == nil then
+    decodeError(TkJson.errorCode.eInvalidValue)
+  elseif value == math.huge or value == -math.huge then
+    decodeError(TkJson.errorCode.eNumberTooBig)
+  else
+    return value
+  end
 end
 
 local value_char = {

@@ -3,50 +3,42 @@ local TkTest = require('source/TkTest')
 
 local TkDriver = {}
 
-TkDriver.testDecodeError = function(errorCode, errorRow, errorCol, json)
-  local status, errorMsg = pcall(TkJson.decode, json)
-  local expectError = string.format(
-    '# Error: Line %d Column %d - %s', 
-    errorRow, errorCol, errorCode
+function TkDriver.TestError(error_code, row, column, json_string)
+  local status, error_msg = pcall(TkJson.Decode, json_string)
+  local expect_error_msg = string.format(
+    '> Error: Line %d Column %d - %s', 
+    row, column, error_code
   )
-  TkTest.expectEqualLiteral(false, status)
-  TkTest.expectEqualString(expectError, errorMsg)
+  TkTest.ExpectBoolean(false, status)
+  TkTest.ExpectString(expect_error_msg, error_msg)
 end
 
-TkDriver.testDecodeNull = function(json)
-  local value = TkJson.decode(json)
-  TkTest.expectEqualNull(TkJson.null, value)
+function TkDriver.TestDecode(expect, json)
+  local value = TkJson.Decode(json)
+  local test_type = type(expect)
+  if test_type == 'function' then
+    TkTest.ExpectNull(expect, value)
+  elseif test_type == 'boolean' then
+    TkTest.ExpectBoolean(expect, value)
+  elseif test_type == 'number' then
+    TkTest.ExpectNumber(expect, value)
+  elseif test_type == 'string' then
+    TkTest.ExpectString(expect, value)
+  elseif test_type == 'table' then
+    if expect.__length ~= nil then
+      TkTest.ExpectArray(expect, value)
+    else
+      TkTest.ExpectObject(expect, value)
+    end
+  else
+    error('> Error - Unrecognized Data Type!')
+  end
 end
 
-TkDriver.testDecodeLiteral = function(literal, json)
-  local value = TkJson.decode(json)
-  TkTest.expectEqualLiteral(literal, value)
-end
-
-TkDriver.testDecodeNumber = function(number, json)
-  local value = TkJson.decode(json)
-  TkTest.expectEqualNumber(number, value)
-end
-
-TkDriver.testDecodeString = function(str, json)
-  local value = TkJson.decode(json)
-  TkTest.expectEqualString(str, value)
-end
-
-TkDriver.testDecodeArray = function(array, json)
-  local value = TkJson.decode(json)
-  TkTest.expectEqualArray(array, value)
-end
-
-TkDriver.testDecodeObject = function(object, json)
-  local value = TkJson.decode(json)
-  TkTest.expectEqualObject(object, value)
-end
-
-TkDriver.testRoundTrip = function(json)
-  local value = TkJson.decode(json)
-  local text = TkJson.encode(value)
-  TkTest.expectEqualString(json, text)
+function TkDriver.TestEncode(json)
+  local value = TkJson.Decode(json)
+  local text = TkJson.Encode(value)
+  TkTest.ExpectString(json, text)
 end
 
 return TkDriver

@@ -1,89 +1,87 @@
 local TkTest = {}
 
-TkTest.expectEqual = function(equality, expect, actual, format)
+function TkTest.ExpectEqual(equality, expect, actual, format)
   if not equality then
     local template = string.format(
       '> Test Failure - Expect: %s, Actual: %s', 
       format, format
     )
-    local errorMsg = string.format(template, expect, actual)
-    error(errorMsg)
+    local error_msg = string.format(template, expect, actual)
+    error(error_msg)
   end
 end
 
-TkTest.expectEqualNull = function(expect, actual)
+function TkTest.ExpectNull(expect, actual)
   local equality = (expect == actual)
-  TkTest.expectEqual(equality, 'null', actual, '%s')
+  TkTest.ExpectEqual(equality, 'null', actual, '%s')
 end
 
-TkTest.expectEqualInt = function(expect, actual)
+function TkTest.ExpectBoolean(expect, actual)
   local equality = (expect == actual)
-  TkTest.expectEqual(equality, expect, actual, '%d')
+  TkTest.ExpectEqual(equality, expect, actual, '%s')
 end
 
-TkTest.expectEqualLiteral = function(expect, actual)
+function TkTest.ExpectInt(expect, actual)
   local equality = (expect == actual)
-  TkTest.expectEqual(equality, expect, actual, '%s')
+  TkTest.ExpectEqual(equality, expect, actual, '%d')
 end
 
-TkTest.expectEqualNumber = function(expect, actual)
+function TkTest.ExpectNumber(expect, actual)
   local equality = (expect == actual)
-  TkTest.expectEqual(equality, expect, actual, '%f')
+  TkTest.ExpectEqual(equality, expect, actual, '%f')
 end
 
-TkTest.expectEqualString = function(expect, actual)
+function TkTest.ExpectString(expect, actual)
   local equality = (expect == actual)
-  TkTest.expectEqual(equality, expect, actual, '%s')
+  TkTest.ExpectEqual(equality, expect, actual, '%s')
 end
  
-TkTest.expectEqualArray = function(expect, actual)
+function TkTest.ExpectArray(expect, actual)
   local equality = (expect.__length == actual.__length)
-  TkTest.expectEqual(equality, expect.__length, actual.__length, '%d')
+  TkTest.ExpectEqual(equality, expect.__length, actual.__length, '%d')
 
   for i = 1, expect.__length do
-    local expectValue = expect[i]
-    local actualValue = actual[i]
-    if type(expectValue) == 'function' then
-      TkTest.expectEqualNull(expectValue, actualValue)
-    elseif type(expectValue) == 'nil' or 
-      type(expectValue) == 'boolean' then
-      TkTest.expectEqualLiteral(expectValue, actualValue)
-    elseif type(expectValue) == 'number' then
-      TkTest.expectEqualNumber(expectValue, actualValue)
-    elseif type(expectValue) == 'string' then
-      TkTest.expectEqualString(expectValue, actualValue)
-    elseif type(expectValue) == 'table' then
-      if expectValue.__length ~= nil then
-        TkTest.expectEqualArray(expectValue, actualValue)
+    local expect_value = expect[i]
+    local actual_value = actual[i]
+    if type(expect_value) == 'function' then
+      TkTest.ExpectNull(expect_value, actual_value)
+    elseif type(expect_value) == 'boolean' then
+      TkTest.ExpectBoolean(expect_value, actual_value)
+    elseif type(expect_value) == 'number' then
+      TkTest.ExpectNumber(expect_value, actual_value)
+    elseif type(expect_value) == 'string' then
+      TkTest.ExpectString(expect_value, actual_value)
+    elseif type(expect_value) == 'table' then
+      if expect_value.__length ~= nil then
+        TkTest.ExpectArray(expect_value, actual_value)
       else
-        TkTest.expectEqualObject(expectValue, actualValue)
+        TkTest.ExpectObject(expect_value, actual_value)
       end
     else
-      error('> Unrecognized Data Type!')
+      error('> Test Failure - Unrecognized Data Type!')
     end
   end
 end
 
-TkTest.expectEqualObject = function(expect, actual)
+function TkTest.ExpectObject(expect, actual)
   for key, value in pairs(expect) do
     local another = actual[key]
     if type(value) == 'function' then
-      TkTest.expectEqualNull(value, another)
-    elseif type(value) == 'nil' or 
-      type(value) == 'boolean' then
-      TkTest.expectEqualLiteral(value, another)
+      TkTest.ExpectNull(value, another)
+    elseif type(value) == 'boolean' then
+      TkTest.ExpectBoolean(value, another)
     elseif type(value) == 'number' then
-      TkTest.expectEqualNumber(value, another)
+      TkTest.ExpectNumber(value, another)
     elseif type(value) == 'string' then
-      TkTest.expectEqualString(value, another)
+      TkTest.ExpectString(value, another)
     elseif type(value) == 'table' then
       if value.__length ~= nil then
-        TkTest.expectEqualArray(value, another)
+        TkTest.ExpectArray(value, another)
       else
-        TkTest.expectEqualObject(value, another)
+        TkTest.ExpectObject(value, another)
       end
     else
-      error('> Unrecognized Data Type!')
+      error('> Test Failure - Unrecognized Data Type!')
     end
   end
 end
