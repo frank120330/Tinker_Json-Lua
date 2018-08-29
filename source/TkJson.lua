@@ -44,6 +44,9 @@ local DecodeValue
 local DecodeNull
 local DecodeTrue
 local DecodeFalse
+local DecodeNumber
+local DecodeUnicode
+local DecodeString
 
 function DecodeError(error_code)
   local row_number = 1
@@ -129,31 +132,137 @@ local number_char = {
   ['5'] = true, ['6'] = true, ['7'] = true, ['8'] = true, ['9'] = true,
   ['+'] = true, ['-'] = true, ['.'] = true, ['e'] = true, ['E'] = true
 }
-decodeNumber = function()
+function DecodeNumber()
   local start_point = g_pointer
-  while numberChar[gNextChar] do
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
+  while number_char[g_next_char] do
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
   end
 
-  local stopPoint = gPointer - 1
-  local value = tonumber(string.sub(gString, startPoint, stopPoint))
+  local stop_point = g_pointer - 1
+  local value = tonumber(string.sub(g_json_string, start_point, stop_point))
   if value == nil then
-    decodeError(TkJson.errorCode.eInvalidValue)
+    DecodeError(TkJson.ErrorCode.InvalidValue)
   elseif value == math.huge or value == -math.huge then
-    decodeError(TkJson.errorCode.eNumberTooBig)
+    DecodeError(TkJson.ErrorCode.NumberTooBig)
   else
     return value
   end
 end
 
+function DecodeUnicode(utf8_string)
+  local hex1 = tonumber(string.sub(utf8_string, 3, 6), 16)
+  local hex2 = tonumber(string.sub(utf8_string, 9, 12), 16)
+  if hex2 then
+    hex1 = (((hex1 - 0xD800) << 10) | (hex2 - 0xDC00)) + 0x10000
+  end
+
+  if hex1 <= 0x7F then
+    return string.char(hex1 & 0xFF)
+  elseif hex1 <= 0x7FF then
+    return string.char(
+      (0xC0 | ((hex1 >> 6) & 0xFF)), 
+      (0x80 | (hex1 & 0x3F))
+    )
+  elseif hex1 <= 0xFFFF then
+    return string.char(
+      (0xE0 | ((hex1 >> 12) & 0xFF)),
+      (0x80 | ((hex1 >> 6) & 0x3F)),
+      (0x80 | (hex1 & 0x3F))
+    )
+  else
+    return string.char(
+      (0xF0 | ((hex1 >> 18) & 0xFF)),
+      (0x80 | ((hex1 >> 12) & 0x3F)),
+      (0x80 | ((hex1 >> 6) & 0x3F)),
+      (0x80 | (hex1 & 0x3F))
+    )
+  end
+end
+
+local escape_char = {
+  ['"'] = true, ['\\'] = true, ['/'] = true,
+  ['b'] = true, ['f'] = true, ['n'] = true,
+  ['r'] = true, ['t'] = true
+}
+local escape_value = {
+  ['\\\"'] = '\"', ['\\\\'] = '\\', ['\\/'] = '/',
+  ['\\b'] = '\b', ['\\f'] = '\f', ['\\n'] = '\n',
+  ['\\r'] = '\r', ['\\t'] = '\t'
+}
+function DecodeString()
+  local value = ''
+  local start_point = g_pointer + 1
+  local stop_point = g_pointer + 1
+  local has_surrogate = false
+  local has_unicode = false
+  local has_escape = false
+
+  while true do
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
+    if g_next_char == '"' then
+      stop_point = g_pointer - 1
+      value = string.sub(g_json_string, start_point, stop_point)
+      if string.find(value, '[\x01-\x1F]') then
+        DecodeError(TkJson.ErrorCode.InvalidStringChar)
+      end
+      if has_surrogate then
+        value = string.gsub(value, '\\u[dD][89AaBb]..\\u....', DecodeUnicode)
+      end
+      if has_unicode then
+        value = string.gsub(value, '\\u....', DecodeUnicode)
+      end
+      if has_escape then
+        value = string.gsub(value, '\\.', escape_value)
+      end
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
+      return value
+    elseif g_next_char == '\\' then
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
+
+      if g_next_char == 'u' then
+        local hex_string = string.sub(g_json_string, g_pointer + 1, g_pointer + 4)
+        if not string.find(hex_string, '%x%x%x%x') then
+          DecodeError(TkJson.ErrorCode.InvalidUnicodeHex)
+        end
+        if string.find(hex_string, '^[Dd][89AaBb]') then
+          has_surrogate = true
+          for i = 1, 10 do
+            g_pointer = g_pointer + 1
+            g_next_char = g_iterator()
+          end
+        else
+          has_unicode = true
+          for i = 1, 4 do
+            g_pointer = g_pointer + 1
+            g_next_char = g_iterator()
+          end
+        end
+      else
+        if not escape_char[g_next_char] then
+          DecodeError(TkJson.ErrorCode.InvalidStringEscape)
+        else
+          has_escape = true
+        end
+      end
+    else
+      if g_next_char == nil then
+        DecodeError(TkJson.ErrorCode.MissQuotationMark)
+      end
+    end
+  end
+end
+
 local value_char = {
   ['n'] = DecodeNull, ['t'] = DecodeTrue, ['f'] = DecodeFalse,
-  -- ['"'] = decodeString, ['['] = decodeArray, ['{'] = decodeObject, 
-  -- ['-'] = decodeNumber, ['0'] = decodeNumber, ['1'] = decodeNumber,
-  -- ['2'] = decodeNumber, ['3'] = decodeNumber, ['4'] = decodeNumber,
-  -- ['5'] = decodeNumber, ['6'] = decodeNumber, ['7'] = decodeNumber,
-  -- ['8'] = decodeNumber, ['9'] = decodeNumber
+  ['"'] = DecodeString, ['['] = decodeArray, ['{'] = decodeObject, 
+  ['-'] = DecodeNumber, ['0'] = DecodeNumber, ['1'] = DecodeNumber,
+  ['2'] = DecodeNumber, ['3'] = DecodeNumber, ['4'] = DecodeNumber,
+  ['5'] = DecodeNumber, ['6'] = DecodeNumber, ['7'] = DecodeNumber,
+  ['8'] = DecodeNumber, ['9'] = DecodeNumber
 }
 function DecodeValue()
   if value_char[g_next_char] then
