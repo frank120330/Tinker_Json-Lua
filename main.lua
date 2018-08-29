@@ -90,33 +90,34 @@ local function DecodeIllegalString()
   TkDriver.TestError(TkJson.ErrorCode.InvalidStringChar, 1, 3, '\"\x1F\"')
 end
 
-local TestDecodeArray = function()
-  TkDriver.testDecodeArray(
+local function DecodeArray()
+  TkDriver.TestDecode(
     { TkJson.null, false, true, 123, 'abc', __length = 5 }, 
     '[ null , false , true , 123 , \"abc\" ]'
   )
-  TkDriver.testDecodeArray({ __length = 0 }, '[ ]')
-  TkDriver.testDecodeArray(
+  TkDriver.TestDecode({ __length = 0 }, '[ ]')
+  TkDriver.TestDecode(
     { 
       { __length = 0 }, 
       { 0, __length = 1 }, 
       { 0, 1, __length = 2 }, 
-      { 0, 1, 2, __length = 3 }, __length = 4 
+      { 0, 1, 2, __length = 3 }, 
+      __length = 4 
     }, 
     '[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]'
   )
 end
 
-local TestDecodeIllegalArray = function()
-  TkDriver.testDecodeError(TkJson.errorCode.eMissCommaOrSquareBracket, 1, 3, '[1')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissCommaOrSquareBracket, 1, 3, '[1}')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissCommaOrSquareBracket, 1, 4, '[1 2')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissCommaOrSquareBracket, 1, 4, '[[]')
+local function DecodeIllegalArray()
+  TkDriver.TestError(TkJson.ErrorCode.MissCommaOrSquareBracket, 1, 3, '[1')
+  TkDriver.TestError(TkJson.ErrorCode.MissCommaOrSquareBracket, 1, 3, '[1}')
+  TkDriver.TestError(TkJson.ErrorCode.MissCommaOrSquareBracket, 1, 4, '[1 2')
+  TkDriver.TestError(TkJson.ErrorCode.MissCommaOrSquareBracket, 1, 4, '[[]')
 end
 
-local TestDecodeObject = function()
-  TkDriver.testDecodeObject({}, '{}')
-  TkDriver.testDecodeObject(
+local function DecodeObject()
+  TkDriver.TestDecode({}, '{}')
+  TkDriver.TestDecode(
     {
       ['n'] = TkJson.null,
       ['f'] = false,
@@ -140,23 +141,23 @@ local TestDecodeObject = function()
   )
 end
 
-local TestDecodeIllegalObject = function()
-  TkDriver.testDecodeError(TkJson.errorCode.eMissKey, 1, 2, '{:1,')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissKey, 1, 2, '{1:1,')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissKey, 1, 2, '{true:1,')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissKey, 1, 2, '{false:1,')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissKey, 1, 2, '{null:1,')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissKey, 1, 2, '{[]:1,')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissKey, 1, 2, '{{}:1,')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissKey, 1, 8, '{\"a\":1,')
+local function DecodeIllegalObject()
+  TkDriver.TestError(TkJson.ErrorCode.MissKey, 1, 2, '{:1,')
+  TkDriver.TestError(TkJson.ErrorCode.MissKey, 1, 2, '{1:1,')
+  TkDriver.TestError(TkJson.ErrorCode.MissKey, 1, 2, '{true:1,')
+  TkDriver.TestError(TkJson.ErrorCode.MissKey, 1, 2, '{false:1,')
+  TkDriver.TestError(TkJson.ErrorCode.MissKey, 1, 2, '{null:1,')
+  TkDriver.TestError(TkJson.ErrorCode.MissKey, 1, 2, '{[]:1,')
+  TkDriver.TestError(TkJson.ErrorCode.MissKey, 1, 2, '{{}:1,')
+  TkDriver.TestError(TkJson.ErrorCode.MissKey, 1, 8, '{\"a\":1,')
 
-  TkDriver.testDecodeError(TkJson.errorCode.eMissColon, 1, 5, '{\"a\"}')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissColon, 1, 5, '{\"a\",\"b\"}')
+  TkDriver.TestError(TkJson.ErrorCode.MissColon, 1, 5, '{\"a\"}')
+  TkDriver.TestError(TkJson.ErrorCode.MissColon, 1, 5, '{\"a\",\"b\"}')
 
-  TkDriver.testDecodeError(TkJson.errorCode.eMissCommaOrCurlyBracket, 1, 7, '{\"a\":1')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissCommaOrCurlyBracket, 1, 7, '{\"a\":1]')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissCommaOrCurlyBracket, 1, 8, '{\"a\":1 \"b\"')
-  TkDriver.testDecodeError(TkJson.errorCode.eMissCommaOrCurlyBracket, 1, 8, '{\"a\":{}')
+  TkDriver.TestError(TkJson.ErrorCode.MissCommaOrCurlyBracket, 1, 7, '{\"a\":1')
+  TkDriver.TestError(TkJson.ErrorCode.MissCommaOrCurlyBracket, 1, 7, '{\"a\":1]')
+  TkDriver.TestError(TkJson.ErrorCode.MissCommaOrCurlyBracket, 1, 8, '{\"a\":1 \"b\"')
+  TkDriver.TestError(TkJson.ErrorCode.MissCommaOrCurlyBracket, 1, 8, '{\"a\":{}')
 end
 
 local function TestDecode()
@@ -166,10 +167,10 @@ local function TestDecode()
   DecodeIllegalNumber()
   DecodeString()
   DecodeIllegalString()
-  -- TestDecodeArray()
-  -- TestDecodeIllegalArray()
-  -- TestDecodeObject()
-  -- TestDecodeIllegalObject()
+  DecodeArray()
+  DecodeIllegalArray()
+  DecodeObject()
+  DecodeIllegalObject()
 end
 
 local TestEncodeLiteral = function()

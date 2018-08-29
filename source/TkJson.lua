@@ -256,9 +256,87 @@ function DecodeString()
   end
 end
 
+DecodeArray = function()
+  local value = {
+    __length = 0
+  }
+  local length = 0
+  
+  g_pointer = g_pointer + 1
+  g_next_char = g_iterator()
+  DecodeWhitespace()
+  if g_next_char == ']' then
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
+    return value
+  end
+  while true do
+    local element = nil
+    element = DecodeValue()
+    length = length + 1
+    value[length] = element
+    DecodeWhitespace()
+    if g_next_char == ',' then
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
+      DecodeWhitespace()
+    elseif g_next_char == ']' then
+      value.__length = length
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
+      return value
+    else
+      DecodeError(TkJson.ErrorCode.MissCommaOrSquareBracket)
+    end
+  end
+end
+
+decodeObject = function()
+  local value = {}
+
+  g_pointer = g_pointer + 1
+  g_next_char = g_iterator()
+  DecodeWhitespace()
+  if g_next_char == '}' then
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
+    return value
+  end
+  while true do
+    local key = nil
+    local element = nil
+
+    if g_next_char ~= '"' then
+      DecodeError(TkJson.ErrorCode.MissKey)
+    end
+    key = DecodeString()
+    DecodeWhitespace()
+    if g_next_char ~= ':' then
+      DecodeError(TkJson.ErrorCode.MissColon)
+    end
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
+    DecodeWhitespace()
+    element = DecodeValue()
+    value[key] = element
+    DecodeWhitespace()
+    if g_next_char == ',' then
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
+      DecodeWhitespace()
+    elseif g_next_char == '}' then
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
+      return value
+    else
+      DecodeError(TkJson.ErrorCode.MissCommaOrCurlyBracket)
+    end
+  end
+end
+
 local value_char = {
   ['n'] = DecodeNull, ['t'] = DecodeTrue, ['f'] = DecodeFalse,
-  ['"'] = DecodeString, ['['] = decodeArray, ['{'] = decodeObject, 
+  ['"'] = DecodeString, ['['] = DecodeArray, ['{'] = decodeObject, 
   ['-'] = DecodeNumber, ['0'] = DecodeNumber, ['1'] = DecodeNumber,
   ['2'] = DecodeNumber, ['3'] = DecodeNumber, ['4'] = DecodeNumber,
   ['5'] = DecodeNumber, ['6'] = DecodeNumber, ['7'] = DecodeNumber,
