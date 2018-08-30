@@ -1,3 +1,11 @@
+--[[
+  Project   TkJson-Lua
+  Author    T1nKeR
+  File      benchmark.lua
+  Description
+    The driver that runs the benchmark tasks.
+--]]
+
 local TkBench = require('source/TkBench')
 
 local libraryArray = {
@@ -14,7 +22,9 @@ local fileArray = {
 }
 
 local RegisterLibrary = function()
-  TkBench.resetBench()
+  TkBench.Reset()
+
+  local json_library = nil
   for key, value in ipairs(libraryArray) do
     TkBench.registerLibrary(value)
   end
@@ -32,6 +42,10 @@ local BenchmarkEncoder = function()
   end
 end
 
-RegisterLibrary()
-BenchmarkDecoder()
-BenchmarkEncoder()
+local function MainApp()
+  RegisterLibrary()
+-- BenchmarkDecoder()
+-- BenchmarkEncoder()
+end
+
+MainApp()

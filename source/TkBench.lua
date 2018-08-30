@@ -1,37 +1,40 @@
+--[[
+  Project   TkJson-Lua
+  Author    T1nKeR
+  File      TkBench.lua
+  Decription
+    A benchmark library.
+--]]
+
 local TkBench = {}
 
-TkBench.libArray = {}
+TkBench.LibraryQueue = {}
 
-TkBench.resetBench = function()
-  TkBench.libArray = {}
+function TkBench.Reset()
+  TkBench.LibraryQueue = {}
 end
 
-TkBench.registerLibrary = function(libName)
-  local libObject = {}
-  libObject.name = libName
-  libObject.library = require(libObject.name)
-  if libObject.library then
-    libObject.decoder = libObject.library.decode
-    libObject.encoder = libObject.library.encode
-    table.insert(TkBench.libArray, libObject)
-  else
-    print('Load library `' + libName + '` failed!')
-  end
+function TkBench.RegisterLibrary(library_name, decoder, encoder)
+  local library = {}
+  library.name = library_name
+  library.decode = decoder
+  library.encode = encoder
+  table.insert(TkBench.LibraryQueue, library)
 end
 
-TkBench.testDecode = function(library, filename)
-  local jsonFile = assert(io.open(filename, 'r'))
-  local jsonString = jsonFile:read('a')
+function TkBench.TestDecode(library, filename)
+  local json_file = assert(io.open(filename, 'r'))
+  local json_string = json_file:read('a')
 
-  local totalTime = 0.0
-  local totalCount = 10
-  for i = 1, totalCount do
-    local startClock = os.clock()
-    local value = library.decoder(jsonString)
-    local stopClock = os.clock()
-    totalTime = totalTime + (stopClock - startClock)
+  local test_time = 0.0
+  local test_count = 10
+  for i = 1, test_count do
+    local start_clock = os.clock()
+    local value = library.decode(json_string)
+    local stop_clock = os.clock()
+    test_time = test_time + (stop_clock - start_clock)
   end 
-  totalTime = totalTime / totalCount
+  test_time = test_time / test_count
   print(
     string.format(
       "> Pressure Test - JSON Decoder: %s, Filename: %s, Elapsed Time: %fs", 
@@ -39,23 +42,23 @@ TkBench.testDecode = function(library, filename)
     )
   )
 
-  return totalTime
+  return test_time
 end
 
-TkBench.testEncode = function(library, filename)
-  local jsonFile = assert(io.open(filename, 'r'))
-  local jsonString = jsonFile:read('a')
-  local jsonValue = library.decoder(jsonString)
+function TkBench.TestEncode(library, filename)
+  local json_file = assert(io.open(filename, 'r'))
+  local json_string = json_file:read('a')
+  local json_value = library.decode(json_string)
 
-  local totalTime = 0.0
-  local totalCount = 10
-  for i = 1, totalCount do
-    local startClock = os.clock()
-    local text = library.encoder(jsonValue)
-    local stopClock = os.clock()
-    totalTime = totalTime + (stopClock - startClock)
+  local test_time = 0.0
+  local test_count = 10
+  for i = 1, test_count do
+    local start_clock = os.clock()
+    local value = library.encode(json_value)
+    local stop_clock = os.clock()
+    test_time = test_time + (stop_clock - start_clock)
   end 
-  totalTime = totalTime / totalCount
+  test_time = test_time / test_count
   print(
     string.format(
       "> Pressure Test - JSON Encoder: %s, Filename: %s, Elapsed Time: %fs", 
@@ -63,19 +66,19 @@ TkBench.testEncode = function(library, filename)
     )
   )
 
-  return totalTime
+  return test_time
 end
 
-TkBench.testAllDecode = function(filename)
-  for key, library in pairs(TkBench.libArray) do
-    TkBench.testDecode(library, filename)
+function TkBench.DecodeBenchmark(filename)
+  for key, library in ipairs(TkBench.LibraryQueue) do
+    TkBench.TestDecode(library, filename)
   end
   print('--------------------------------------------------------------')
 end
 
-TkBench.testAllEncode = function(filename)
-  for key, library in pairs(TkBench.libArray) do
-    TkBench.testEncode(library, filename)
+function TkBench.EncodeBenchmark(filename)
+  for key, library in ipairs(TkBench.LibraryQueue) do
+    TkBench.TestEncode(library, filename)
   end
   print('--------------------------------------------------------------')
 end

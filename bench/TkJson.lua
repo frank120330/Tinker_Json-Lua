@@ -1,159 +1,161 @@
+--[[
+  Project   TkJson-Lua
+  Author    T1nKeR
+  File      TkJson.lua
+  Description
+    A simple JSON library that decodes a JSON string or encodes a Lua value.
+--]]
+
 local TkJson = {}
 
---[[
-  We use an anonymous function to define a `null` in Lua.
---]]
-
-TkJson.null = function() end
-
-TkJson.errorCode = {
-  eOk = 'Decode successfully',
-  eExpectValue = 'Expect a value',
-  eInvalidValue = 'Invalid value',
-  eRootNotSingular = 'Root not singular',
-  eNumberTooBig = 'Number too big',
-  eMissQuotationMark = 'Miss quotation mark',
-  eInvalidStringEscape = 'Invalid string escape',
-  eInvalidStringChar = 'Invalid string char',
-  eInvalidUnicodeHex = 'Invalid unicode hex',
-  eInvalidUnicodeSurrogate = 'Invalid unicode surrogate',
-  eMissCommaOrSquareBracket = 'Miss comma or square bracket',
-  eMissKey = 'Miss key in key-value pair',
-  eMissColon = 'Miss colon',
-  eMissCommaOrCurlyBracket = 'Miss comma or curly bracket'
+TkJson.ErrorCode = {
+  Ok = 'Decode successfully',
+  ExpectValue = 'Expect a value',
+  InvalidValue = 'Invalid value',
+  RootNotSingular = 'Root not singular',
+  NumberTooBig = 'Number too big',
+  MissQuotationMark = 'Miss quotation mark',
+  InvalidStringEscape = 'Invalid string escape',
+  InvalidStringChar = 'Invalid string char',
+  InvalidUnicodeHex = 'Invalid unicode hex',
+  InvalidUnicodeSurrogate = 'Invalid unicode surrogate',
+  MissCommaOrSquareBracket = 'Miss comma or square bracket',
+  MissKey = 'Miss key in key-value pair',
+  MissColon = 'Miss colon',
+  MissCommaOrCurlyBracket = 'Miss comma or curly bracket'
 }
 
---[[
-  Global variables & functions used by multiple decoding functions.
---]]
+TkJson.null = {}
+setmetatable(TkJson.null, {
+  __newindex = function(dict, key, value)
+    error('> Error: TkJson.null is immutable!')
+  end,
+  __tostring = function()
+    return 'null'
+  end
+})
 
-local gIterator = nil
-local gNextChar = nil
-local gPointer = nil
-local gString = nil
+local g_iterator = nil
+local g_next_char = nil
+local g_pointer = nil
+local g_json_string = nil
 
---[[
-  Decoding functions for different data types.
---]]
+local Decode
+local DecodeError
+local DecodeWhitespace
+local DecodeValue
+local DecodeNull
+local DecodeTrue
+local DecodeFalse
+local DecodeNumber
+local DecodeUnicode
+local DecodeString
 
-local decodeError
-local decodeWhitespace
-local decodeValue
-local decodeNull
-local decodeTrue
-local decodeFalse
-local decodeNumber
-local decodeUnicode
-local decodeString
-local decodeArray
-local decodeObject
-local decode
+function DecodeError(error_code)
+  local row_number = 1
+  local col_number = 1
 
-decodeError = function(errorType)
-  local rowCount = 1
-  local colCount = 1
-  
-  local iterator = string.gmatch(gString, '.')
-  local nextChar = iterator()
+  local iterator = string.gmatch(g_json_string, '.')
+  local next_char = iterator()
   local pointer = 1
 
-  while pointer < gPointer do
+  while pointer < g_pointer do
     pointer = pointer + 1
-    nextChar = iterator()
-    if nextChar == '\n' then
-      rowCount = rowCount + 1
-      colCount = 1
+    next_char = iterator()
+    if next_char == '\n' then
+      row_number = row_number + 1
+      col_number = 1
     else
-      colCount = colCount + 1
+      col_number = col_number + 1
     end
   end
 
-  local errorMsg = string.format(
-    '# Error: Line %d Column %d - %s', 
-    rowCount, colCount, errorType
+  local error_msg = string.format(
+    '> Error: Line %d Column %d - %s', 
+    row_number, col_number, error_code
   )
-  error(errorMsg, 0)
+  error(error_msg, 0)
 end
 
-local whitespaceChar = {
+local whitespace_char = {
   [' '] = true, ['\t'] = true,
   ['\n'] = true, ['\r'] = true
 }
-decodeWhitespace = function()
-  while whitespaceChar[gNextChar] do
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
+function DecodeWhitespace()
+  while whitespace_char[g_next_char] do
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
   end
 end
 
-local nullChar = {
+local null_char = {
   'n', 'u', 'l', 'l'
 }
-decodeNull = function()
+function DecodeNull()
   for i = 1, 4 do
-    if gNextChar ~= nullChar[i] then
-      decodeError(TkJson.errorCode.eInvalidValue)
+    if g_next_char ~= null_char[i] then
+      DecodeError(TkJson.ErrorCode.InvalidValue)
     end
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
   end
   return TkJson.null
 end
 
-local trueChar = {
+local true_char = {
   't', 'r', 'u', 'e'
 }
-decodeTrue = function()
+function DecodeTrue()
   for i = 1, 4 do
-    if gNextChar ~= trueChar[i] then
-      decodeError(TkJson.errorCode.eInvalidValue)
+    if g_next_char ~= true_char[i] then
+      DecodeError(TkJson.ErrorCode.InvalidValue)
     end
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
   end
   return true
 end
 
-local falseChar = {
+local false_char = {
   'f', 'a', 'l', 's', 'e'
 }
-decodeFalse = function()
+function DecodeFalse()
   for i = 1, 5 do
-    if gNextChar ~= falseChar[i] then
-      decodeError(TkJson.errorCode.eInvalidValue)
+    if g_next_char ~= false_char[i] then
+      DecodeError(TkJson.ErrorCode.InvalidValue)
     end
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
   end
   return false
 end
 
-local numberChar = {
+local number_char = {
   ['0'] = true, ['1'] = true, ['2'] = true, ['3'] = true, ['4'] = true, 
   ['5'] = true, ['6'] = true, ['7'] = true, ['8'] = true, ['9'] = true,
   ['+'] = true, ['-'] = true, ['.'] = true, ['e'] = true, ['E'] = true
 }
-decodeNumber = function()
-  local startPoint = gPointer
-  while numberChar[gNextChar] do
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
+function DecodeNumber()
+  local start_point = g_pointer
+  while number_char[g_next_char] do
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
   end
 
-  local stopPoint = gPointer - 1
-  local value = tonumber(string.sub(gString, startPoint, stopPoint))
+  local stop_point = g_pointer - 1
+  local value = tonumber(string.sub(g_json_string, start_point, stop_point))
   if value == nil then
-    decodeError(TkJson.errorCode.eInvalidValue)
+    DecodeError(TkJson.ErrorCode.InvalidValue)
   elseif value == math.huge or value == -math.huge then
-    decodeError(TkJson.errorCode.eNumberTooBig)
+    DecodeError(TkJson.ErrorCode.NumberTooBig)
   else
     return value
   end
 end
 
-decodeUnicode = function(utf8String)
-  local hex1 = tonumber(string.sub(utf8String, 3, 6), 16)
-  local hex2 = tonumber(string.sub(utf8String, 9, 12), 16)
+function DecodeUnicode(utf8_string)
+  local hex1 = tonumber(string.sub(utf8_string, 3, 6), 16)
+  local hex2 = tonumber(string.sub(utf8_string, 9, 12), 16)
   if hex2 then
     hex1 = (((hex1 - 0xD800) << 10) | (hex2 - 0xDC00)) + 0x10000
   end
@@ -181,113 +183,113 @@ decodeUnicode = function(utf8String)
   end
 end
 
-local escapeChar = {
+local escape_char = {
   ['"'] = true, ['\\'] = true, ['/'] = true,
   ['b'] = true, ['f'] = true, ['n'] = true,
   ['r'] = true, ['t'] = true
 }
-local escapeValue = {
+local escape_value = {
   ['\\\"'] = '\"', ['\\\\'] = '\\', ['\\/'] = '/',
   ['\\b'] = '\b', ['\\f'] = '\f', ['\\n'] = '\n',
   ['\\r'] = '\r', ['\\t'] = '\t'
 }
-decodeString = function()
+function DecodeString()
   local value = ''
-  local startPoint = gPointer + 1
-  local stopPoint = gPointer + 1
-  local hasSurrogate = false
-  local hasUnicode = false
-  local hasEscape = false
+  local start_point = g_pointer + 1
+  local stop_point = g_pointer + 1
+  local has_surrogate = false
+  local has_unicode = false
+  local has_escape = false
 
   while true do
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
-    if gNextChar == '"' then
-      stopPoint = gPointer - 1
-      value = string.sub(gString, startPoint, stopPoint)
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
+    if g_next_char == '"' then
+      stop_point = g_pointer - 1
+      value = string.sub(g_json_string, start_point, stop_point)
       if string.find(value, '[\x01-\x1F]') then
-        decodeError(TkJson.errorCode.eInvalidStringChar)
+        DecodeError(TkJson.ErrorCode.InvalidStringChar)
       end
-      if hasSurrogate then
-        value = string.gsub(value, '\\u[dD][89AaBb]..\\u....', decodeUnicode)
+      if has_surrogate then
+        value = string.gsub(value, '\\u[dD][89AaBb]..\\u....', DecodeUnicode)
       end
-      if hasUnicode then
-        value = string.gsub(value, '\\u....', decodeUnicode)
+      if has_unicode then
+        value = string.gsub(value, '\\u....', DecodeUnicode)
       end
-      if hasEscape then
-        value = string.gsub(value, '\\.', escapeValue)
+      if has_escape then
+        value = string.gsub(value, '\\.', escape_value)
       end
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
       return value
-    elseif gNextChar == '\\' then
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
+    elseif g_next_char == '\\' then
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
 
-      if gNextChar == 'u' then
-        local hexString = string.sub(gString, gPointer + 1, gPointer + 4)
-        if not string.find(hexString, '%x%x%x%x') then
-          decodeError(TkJson.errorCode.eInvalidUnicodeHex)
+      if g_next_char == 'u' then
+        local hex_string = string.sub(g_json_string, g_pointer + 1, g_pointer + 4)
+        if not string.find(hex_string, '%x%x%x%x') then
+          DecodeError(TkJson.ErrorCode.InvalidUnicodeHex)
         end
-        if string.find(hexString, '^[Dd][89AaBb]') then
-          hasSurrogate = true
+        if string.find(hex_string, '^[Dd][89AaBb]') then
+          has_surrogate = true
           for i = 1, 10 do
-            gPointer = gPointer + 1
-            gNextChar = gIterator()
+            g_pointer = g_pointer + 1
+            g_next_char = g_iterator()
           end
         else
-          hasUnicode = true
+          has_unicode = true
           for i = 1, 4 do
-            gPointer = gPointer + 1
-            gNextChar = gIterator()
+            g_pointer = g_pointer + 1
+            g_next_char = g_iterator()
           end
         end
       else
-        if not escapeChar[gNextChar] then
-          decodeError(TkJson.errorCode.eInvalidStringEscape)
+        if not escape_char[g_next_char] then
+          DecodeError(TkJson.ErrorCode.InvalidStringEscape)
         else
-          hasEscape = true
+          has_escape = true
         end
       end
     else
-      if gNextChar == nil then
-        decodeError(TkJson.errorCode.eMissQuotationMark)
+      if g_next_char == nil then
+        DecodeError(TkJson.ErrorCode.MissQuotationMark)
       end
     end
   end
 end
 
-decodeArray = function()
+DecodeArray = function()
   local value = {
     __length = 0
   }
   local length = 0
   
-  gPointer = gPointer + 1
-  gNextChar = gIterator()
-  decodeWhitespace()
-  if gNextChar == ']' then
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
+  g_pointer = g_pointer + 1
+  g_next_char = g_iterator()
+  DecodeWhitespace()
+  if g_next_char == ']' then
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
     return value
   end
   while true do
     local element = nil
-    element = decodeValue()
+    element = DecodeValue()
     length = length + 1
     value[length] = element
-    decodeWhitespace()
-    if gNextChar == ',' then
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
-      decodeWhitespace()
-    elseif gNextChar == ']' then
+    DecodeWhitespace()
+    if g_next_char == ',' then
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
+      DecodeWhitespace()
+    elseif g_next_char == ']' then
       value.__length = length
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
       return value
     else
-      decodeError(TkJson.errorCode.eMissCommaOrSquareBracket)
+      DecodeError(TkJson.ErrorCode.MissCommaOrSquareBracket)
     end
   end
 end
@@ -295,179 +297,85 @@ end
 decodeObject = function()
   local value = {}
 
-  gPointer = gPointer + 1
-  gNextChar = gIterator()
-  decodeWhitespace()
-  if gNextChar == '}' then
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
+  g_pointer = g_pointer + 1
+  g_next_char = g_iterator()
+  DecodeWhitespace()
+  if g_next_char == '}' then
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
     return value
   end
   while true do
     local key = nil
     local element = nil
 
-    if gNextChar ~= '"' then
-      decodeError(TkJson.errorCode.eMissKey)
+    if g_next_char ~= '"' then
+      DecodeError(TkJson.ErrorCode.MissKey)
     end
-    key = decodeString()
-    decodeWhitespace()
-    if gNextChar ~= ':' then
-      decodeError(TkJson.errorCode.eMissColon)
+    key = DecodeString()
+    DecodeWhitespace()
+    if g_next_char ~= ':' then
+      DecodeError(TkJson.ErrorCode.MissColon)
     end
-    gPointer = gPointer + 1
-    gNextChar = gIterator()
-    decodeWhitespace()
-    element = decodeValue()
+    g_pointer = g_pointer + 1
+    g_next_char = g_iterator()
+    DecodeWhitespace()
+    element = DecodeValue()
     value[key] = element
-    decodeWhitespace()
-    if gNextChar == ',' then
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
-      decodeWhitespace()
-    elseif gNextChar == '}' then
-      gPointer = gPointer + 1
-      gNextChar = gIterator()
+    DecodeWhitespace()
+    if g_next_char == ',' then
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
+      DecodeWhitespace()
+    elseif g_next_char == '}' then
+      g_pointer = g_pointer + 1
+      g_next_char = g_iterator()
       return value
     else
-      decodeError(TkJson.errorCode.eMissCommaOrCurlyBracket)
+      DecodeError(TkJson.ErrorCode.MissCommaOrCurlyBracket)
     end
   end
 end
 
-local valueChar = {
-  ['n'] = decodeNull, ['t'] = decodeTrue, ['f'] = decodeFalse,
-  ['"'] = decodeString, ['['] = decodeArray, ['{'] = decodeObject, 
-  ['-'] = decodeNumber, ['0'] = decodeNumber, ['1'] = decodeNumber,
-  ['2'] = decodeNumber, ['3'] = decodeNumber, ['4'] = decodeNumber,
-  ['5'] = decodeNumber, ['6'] = decodeNumber, ['7'] = decodeNumber,
-  ['8'] = decodeNumber, ['9'] = decodeNumber
+local value_char = {
+  ['n'] = DecodeNull, ['t'] = DecodeTrue, ['f'] = DecodeFalse,
+  ['"'] = DecodeString, ['['] = DecodeArray, ['{'] = decodeObject, 
+  ['-'] = DecodeNumber, ['0'] = DecodeNumber, ['1'] = DecodeNumber,
+  ['2'] = DecodeNumber, ['3'] = DecodeNumber, ['4'] = DecodeNumber,
+  ['5'] = DecodeNumber, ['6'] = DecodeNumber, ['7'] = DecodeNumber,
+  ['8'] = DecodeNumber, ['9'] = DecodeNumber
 }
-decodeValue = function()
-  if valueChar[gNextChar] then
-    local decodeFunc = valueChar[gNextChar]
-    return decodeFunc()
+function DecodeValue()
+  if value_char[g_next_char] then
+    local decode_function = value_char[g_next_char]
+    return decode_function()
   else
-    if gNextChar == nil then
-      decodeError(TkJson.errorCode.eExpectValue)
+    if g_next_char then
+      DecodeError(TkJson.ErrorCode.InvalidValue)
     else
-      decodeError(TkJson.errorCode.eInvalidValue)
+      DecodeError(TkJson.ErrorCode.ExpectValue)
     end
   end
 end
 
-decode = function(jsonString)
+function Decode(json_string)
   local value = nil
   
-  gIterator = string.gmatch(jsonString, '.')
-  gNextChar = gIterator()
-  gPointer = 1
-  gString = jsonString
+  g_json_string = json_string
+  g_iterator = string.gmatch(g_json_string, '.')
+  g_next_char = g_iterator()
+  g_pointer = 1
 
-  decodeWhitespace()
-  value = decodeValue()
-  decodeWhitespace()
+  DecodeWhitespace()
+  value = DecodeValue()
+  DecodeWhitespace()
 
-  if gNextChar ~= nil then
-    decodeError(TkJson.errorCode.eRootNotSingular)
+  if g_next_char ~= nil then
+    DecodeError(TkJson.ErrorCode.RootNotSingular)
   end
   return value
 end
 
---[[
-  JSON decoding API exposed to users  
---]]
-
-TkJson.parser = decode
-TkJson.decode = decode
-
---[[
-  Global Constants & functions used by Stringifier
---]]
-
-local encodeNull
-local encodeBoolean
-local encodeNumber
-local encodeString
-local encodeTable
-local encodeArray
-local encodeObject
-local encode
-
---[[
-  Stringification functions
---]]
-
-encodeNull = function(value)
-  return 'null'
-end
-
-encodeBoolean = function(value)
-  if value then
-    return 'true'
-  else
-    return 'false'
-  end
-end
-
-encodeNumber = function(value)
-  return string.format('%.17g', value)
-end
-
-local stringValue = {
-  ['\"'] = '\\"', ['\\'] = '\\\\', ['/'] = '/',
-  ['\b'] = '\\b', ['\f'] = '\\f', ['\n'] = '\\n',
-  ['\r'] = '\\r', ['\t'] = '\\t'
-}
-local utf8Replacer = function(ch)
-  return stringValue[ch] or string.format('\\u%04X', string.byte(ch))
-end
-encodeString = function(value)
-  return '"' .. string.gsub(value, '[\x00-\x1F\\"]', utf8Replacer) .. '"'
-end
-
-encodeArray = function(value)
-  local stringArray = {}
-  local length = value.__length
-  for i = 1, length do
-    table.insert(stringArray, encode(value[i]))
-  end
-  return '[' .. table.concat(stringArray, ',') .. ']'
-end
-
-encodeObject = function(value)
-  local stringArray = {}
-  for key, val in pairs(value) do
-    table.insert(stringArray, encode(key) .. ':' .. encode(val))
-  end
-  return '{' .. table.concat(stringArray, ',') .. '}'
-end
-
-encodeTable = function(value)
-  if value.__length then
-    return encodeArray(value)
-  else
-    return encodeObject(value)
-  end
-end
-
-local encodeChar = {
-  ['function'] = encodeNull, 
-  ['boolean'] = encodeBoolean,
-  ['number'] = encodeNumber,
-  ['string'] = encodeString,
-  ['table'] = encodeTable
-}
-encode = function(value)
-  local encodeFunc = encodeChar[type(value)]
-  if encodeFunc then
-    return encodeFunc(value)
-  else
-    error('# Error: Invalid data type ' .. tostring(value))
-  end
-end
-
-TkJson.encode = encode
-TkJson.encode = encode
+TkJson.Decode = Decode
 
 return TkJson

@@ -1,3 +1,12 @@
+--[[
+  Project   TkJson-Lua
+  Author    T1nKeR
+  File      TkDriver.lua
+  Description
+    A simple framework for unit tests.
+    It is a auxiliary library over TkTest.
+--]]
+
 local TkJson = require('source/TkJson')
 local TkTest = require('source/TkTest')
 

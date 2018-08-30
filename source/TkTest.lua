@@ -1,3 +1,11 @@
+--[[
+  Project   TkJson-Lua
+  Author    T1nKeR
+  File      TkTest.lua
+  Description
+    A simple framework for unit tests.
+--]]
+
 local TkTest = {}
 
 function TkTest.ExpectEqual(equality, expect, actual, format)

@@ -1,6 +1,9 @@
 --[[
-  Author    T1nKeR
   Project   TkJson-Lua
+  Author    T1nKeR
+  File      TkJson.lua
+  Description
+    A simple JSON library that decodes a JSON string or encodes a Lua value.
 --]]
 
 local TkJson = {}
