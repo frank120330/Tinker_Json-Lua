@@ -8,44 +8,28 @@
 
 local TkBench = require('source/TkBench')
 
-local libraryArray = {
-  '../bench/TkJson',
-  '../bench/dkjson',
-  -- '../bench/jfjson',
-  '../bench/json'
-}
-
-local fileArray = {
-  'test/canada.json',
-  'test/citm_catalog.json',
-  'test/twitter.json'
-}
-
-local RegisterLibrary = function()
+local function MainApp()
   TkBench.Reset()
 
   local json_library = nil
-  for key, value in ipairs(libraryArray) do
-    TkBench.registerLibrary(value)
+  -- Register 'dkjson'
+  json_library = require('bench/dkjson');
+  TkBench.RegisterLibrary('dkjson', json_library.decode, json_library.decode)
+  -- Register 'TkJson'
+  json_library = require('source/TkJson')
+  TkBench.RegisterLibrary('TkJson', json_library.Decode, json_library.Encode)
+  
+  local file_list = {
+    'test/canada.json',
+    'test/citm_catalog.json',
+    'test/twitter.json'
+  }
+  for key, value in pairs(file_list) do
+    TkBench.DecodeBenchmark(value)
   end
-end
-
-local BenchmarkDecoder = function()
-  for key, value in pairs(fileArray) do
-    TkBench.testAllDecode(value)
-  end
-end
-
-local BenchmarkEncoder = function()
-  for key, value in pairs(fileArray) do
-    TkBench.testAllEncode(value)
-  end
-end
-
-local function MainApp()
-  RegisterLibrary()
--- BenchmarkDecoder()
--- BenchmarkEncoder()
+  -- for key, value in pairs(fileArray) do
+  --   TkBench.EncodeBenchmark(value)
+  -- end
 end
 
 MainApp()

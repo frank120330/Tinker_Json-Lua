@@ -38,7 +38,7 @@ function TkBench.TestDecode(library, filename)
   print(
     string.format(
       "> Pressure Test - JSON Decoder: %s, Filename: %s, Elapsed Time: %fs", 
-      library.name, filename, totalTime
+      library.name, filename, test_time
     )
   )
 
@@ -62,7 +62,7 @@ function TkBench.TestEncode(library, filename)
   print(
     string.format(
       "> Pressure Test - JSON Encoder: %s, Filename: %s, Elapsed Time: %fs", 
-      library.name, filename, totalTime
+      library.name, filename, test_time
     )
   )
 
