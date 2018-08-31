@@ -199,6 +199,6 @@ element 5: abc
 
 ## 鸣谢
 
-感谢我的好友 @tangyiyang, 在这个项目的实现过程中他提供了许多宝贵的指导和帮助.
+感谢我的好友 [**@tangyiyang**](https://github.com/tangyiyang), 在这个项目的实现过程中他提供了许多宝贵的指导和帮助.
 
-感谢 @miloyip, 本项目的结构完全基于他的专栏文章 [从零开始的 JSON 库教程](https://zhuanlan.zhihu.com/json-tutorial).
+感谢 [**@miloyip**](https://github.com/miloyip), 本项目的结构完全基于他的专栏文章 [从零开始的 JSON 库教程](https://zhuanlan.zhihu.com/json-tutorial).
