@@ -11,10 +11,10 @@ local function DecodeIllegalLiteral()
   TkDriver.TestError(TkJson.ErrorCode.ExpectValue, 1, 1, '')
   TkDriver.TestError(TkJson.ErrorCode.ExpectValue, 1, 2, ' ')
 
-  TkDriver.TestError(TkJson.ErrorCode.InvalidValue, 1, 4, 'nul')
+  TkDriver.TestError(TkJson.ErrorCode.InvalidValue, 1, 1, 'nul')
   TkDriver.TestError(TkJson.ErrorCode.InvalidValue, 1, 1, '?')
 
-  TkDriver.TestError(TkJson.ErrorCode.RootNotSingular, 1, 6, 'null x')
+  TkDriver.TestError(TkJson.ErrorCode.RootNotSingular, 1, 5, 'null x')
 end
 
 local function DecodeNumber()
@@ -57,13 +57,13 @@ local function DecodeIllegalNumber()
   TkDriver.TestError(TkJson.ErrorCode.InvalidValue, 1, 1, 'INF')
   TkDriver.TestError(TkJson.ErrorCode.InvalidValue, 1, 1, 'inf')
   TkDriver.TestError(TkJson.ErrorCode.InvalidValue, 1, 1, 'NAN')
-  TkDriver.TestError(TkJson.ErrorCode.InvalidValue, 1, 2, 'nan')
+  TkDriver.TestError(TkJson.ErrorCode.InvalidValue, 1, 1, 'nan')
 
   TkDriver.TestError(TkJson.ErrorCode.NumberTooBig, 1, 6, '1e309')
   TkDriver.TestError(TkJson.ErrorCode.NumberTooBig, 1, 7, '-1e309')
   -- TkDriver.TestError(TkJson.ErrorCode.RootNotSingular, '0123')
-  TkDriver.TestError(TkJson.ErrorCode.RootNotSingular, 1, 2, '0x0')
-  TkDriver.TestError(TkJson.ErrorCode.RootNotSingular, 1, 2, '0x123')
+  TkDriver.TestError(TkJson.ErrorCode.RootNotSingular, 1, 1, '0x0')
+  TkDriver.TestError(TkJson.ErrorCode.RootNotSingular, 1, 1, '0x123')
 end
 
 local function DecodeString()
@@ -163,8 +163,8 @@ end
 local function TestDecode()
   DecodeLiteral()
   DecodeIllegalLiteral()
-  -- DecodeNumber()
-  -- DecodeIllegalNumber()
+  DecodeNumber()
+  DecodeIllegalNumber()
   -- DecodeString()
   -- DecodeIllegalString()
   -- DecodeArray()

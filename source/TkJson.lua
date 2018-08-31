@@ -7,8 +7,10 @@
 --]]
 
 local error, setmetatable = error, setmetatable
-local string_byte, string_format, string_find = 
-  string.byte, string.format, string.find
+local math_huge =
+  math.huge
+local string_byte, string_format, string_find, string_sub, string_match = 
+  string.byte, string.format, string.find, string.sub, string.match
 
 local TkJson = {}
 
@@ -76,30 +78,44 @@ function DecodeError(error_code)
 end
 
 function DecodeNull()
-  valid, g_pointer = string_find(g_json_string, '^null', g_pointer)
-  if not valid then
-    DecodeError(TkJson.ErrorCode.InvalidValue)
+  if string_sub(g_json_string, g_pointer, g_pointer + 3) == 'null' then
+    g_pointer = g_pointer + 4
+    return TkJson.null
   end
-  g_pointer = g_pointer + 1
-  return TkJson.null
+  DecodeError(TkJson.ErrorCode.InvalidValue)
 end
 
 function DecodeTrue()
-  valid, g_pointer = string_find(g_json_string, '^true', g_pointer)
-  if not valid then
-    DecodeError(TkJson.ErrorCode.InvalidValue)
+  if string_sub(g_json_string, g_pointer, g_pointer + 3) == 'true' then
+    g_pointer = g_pointer + 4
+    return true
   end
-  g_pointer = g_pointer + 1
-  return true
+  DecodeError(TkJson.ErrorCode.InvalidValue)
 end
 
 function DecodeFalse()
-  valid, g_pointer = string_find(g_json_string, '^false', g_pointer)
-  if not valid then
-    DecodeError(TkJson.ErrorCode.InvalidValue)
+  if string_sub(g_json_string, g_pointer, g_pointer + 4) == 'false' then
+    g_pointer = g_pointer + 5
+    return false
   end
-  g_pointer = g_pointer + 1
-  return false
+  DecodeError(TkJson.ErrorCode.InvalidValue)
+end
+
+function DecodeNumber()
+  local number_string = string_match(
+    g_json_string, '^[1234567890%+%-%.eE]+', g_pointer
+  )
+  local value = tonumber(number_string)
+  if not value then
+    DecodeError(TkJson.ErrorCode.InvalidValue)
+  else
+    g_pointer = g_pointer + #number_string
+    if value == math_huge or value == -math_huge then
+      DecodeError(TkJson.ErrorCode.NumberTooBig)
+    else  
+      return value
+    end
+  end
 end
 
 local value_char = {
