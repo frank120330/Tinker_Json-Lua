@@ -17,10 +17,13 @@ local function MainApp()
   TkBench.RegisterLibrary('TkJson', json_library.Decode, json_library.Encode)
   -- Register 'dkjson'
   json_library = require('bench/dkjson');
-  TkBench.RegisterLibrary('dkjson', json_library.decode, json_library.decode)
+  TkBench.RegisterLibrary('dkjson', json_library.decode, json_library.encode)
   -- Register 'json.lua'
   json_library = require('bench/json')
-  TkBench.RegisterLibrary('json.lua', json_library.decode, json_library.decode)
+  TkBench.RegisterLibrary('json.lua', json_library.decode, json_library.encode)
+  -- Register 'lunajson'
+  json_library = require('bench/lunajson')
+  TkBench.RegisterLibrary('lunajson', json_library.decode, json_library.encode)
   -- Register 'jfjson'
   -- jfjson takes more than 1 minute to parse the given json text.
   --json_library = require('bench/jfjson')

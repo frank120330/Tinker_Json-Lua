@@ -92,12 +92,113 @@ stack traceback:
 ...
 ```
 
-对于 JSON 中的布尔/数字/字符串类型, TinkerJson 会将它们分别转换为 Lua 中对应的的布尔/数字/字符串类型. 其中, 数字会根据其形式被转换为整数或浮点数.
+对于 JSON 中的布尔/数字/字符串类型, TinkerJson 会将它们分别转换为 Lua 中对应的的布尔/数字/字符串类型.
+
+**示例**
+
+```lua
+bool1 = TkJson.Decode('true')
+bool2 = TkJson.Decode('false')
+print(type(bool1) .. ': ' .. tostring(bool1))
+print(type(bool2) .. ': ' .. tostring(bool2))
+print()
+
+number1 = TkJson.Decode('20120330')
+number2 = TkJson.Decode('3.1415926')
+print(type(number1) .. ': ' .. tostring(number1))
+print(type(number2) .. ': ' .. tostring(number2))
+print()
+
+string1 = TkJson.Decode('\"Hello TinkerJson!\"')
+string2 = TkJson.Decode('\"\\uD834\\uDD1E\"')
+print(type(string1) .. ': ' .. tostring(string1))
+print(type(string2) .. ': ' .. tostring(string2))
+```
+
+**输出**
+
+```
+boolean: true
+boolean: false
+
+number: 20120330
+number: 3.1415926
+
+string: Hello TinkerJson!
+string: 𝄞
+```
 
 TinkerJson 会将 `null` 转换为 `TinkerJson.null`(而非 Lua 中的 `nil`), 以避免 JSON 中值为 `null` 的键值对在 Lua 中被视作不存在的表项. 在输出时, `TinkerJson.null` 会打印为 `null`.
 
+**示例**
+
+```lua
+null1 = TkJson.Decode('null')
+print(null1)
+print(null1 == TkJson.null)
+```
+
+**输出**
+
+```
+null
+true
+```
+
+JSON 中的数组和对象类型会被解析为 Lua 中的 table 类型. 其中, TinkerJson 会自动为由数组类型解析得到的表添加一个额外的表项 `__length`, 指示数组中元素的个数.
+
+**示例**
+
+```lua
+array1 = TkJson.Decode('[ null , false , true , 123 , \"abc\" ]')
+print('length: ' .. tostring(array1.__length))
+for i = 1, array1.__length do
+  print('element ' .. tostring(i) .. ': ' .. tostring(array1[i]))
+end
+```
+
+**输出**
+
+```
+length: 5
+element 1: null
+element 2: false
+element 3: true
+element 4: 123
+element 5: abc
+```
+
 ## 性能
+
+### 测试文件
+
+我们使用 `canada.json`, `twitter.json` 及 `citm_catalog.json` 三个文件进行性能测试, 其中:
+
+* `canada.json`: 体积 2.3MB, 包含大量浮点数.
+* `twitter.json`: 体积 632KB, 内容主要为 UTF-8 格式字符串.
+* `citm_catalog.json`: 体积 1.7MB, 含有数字, 字符串, 数组等多种 JSON 类型.
+
+### 参照
+
+我们选取了 [Lua User Wiki](http://lua-users.org/wiki/JsonModules) 中列举的几种完全由 Lua 实现的 JSON 处理工具进行横向对比测试: 
+
+* [json4lua](https://github.com/craigmj/json4lua)
+* [dkjson](http://dkolf.de/src/dkjson-lua.fsl/home), 关闭 lpeg
+* [jfjson](http://regex.info/blog/lua/json)
+* [json.lua](https://github.com/rxi/json.lua)
+
+### 解析 JSON 测试
+
+解析 JSON 文本所用时长如下图所示(重复解析十次, 取平均值):
+
+图
 
 ## 版权
 
+本项目采用 MIT 许可证发布.
+
 ## 鸣谢
+
+感谢我的好友 @tangyiyang, 在这个项目的实现过程中他提供了许多宝贵的指导和帮助.
+
+感谢 @miloyip, 本项目的结构完全基于他的专栏文章 [从零开始的 JSON 库教程](https://zhuanlan.zhihu.com/json-tutorial).
