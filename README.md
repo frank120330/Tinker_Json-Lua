@@ -1,4 +1,4 @@
-<h1 align="center">TinkerJson-Lua - 小巧而高速的JSON解析/生成器</h1>
+<h1 align="center">TinkerJson - 小巧而高速的JSON解析/生成器</h1>
 
 ## 简介
 
@@ -32,11 +32,11 @@ TinkerJson 位于 `source/TkJson.lua` 中.
 
 ## 用法
 
-TinkerJson 为解析和生成 JSON 文本分别提供了一个方法, 分别是 `TkJson.decode` 和 `TkJson.encode`.
+TinkerJson 为解析和生成 JSON 文本分别提供了一个方法, 分别是 `TkJson.Decode` 和 `TkJson.Encode`.
 
 ### 解析 JSON 文本
 
-`TkJson.decode` 方法的参数为待解析的 JSON 字符串, 返回解析生成的值或对象.
+`TkJson.Decode` 方法的参数为待解析的 JSON 字符串, 返回解析生成的值或对象.
 
 如果输入的 JSON 字符串不合法, 方法会报告错误并指出错误发生的位置.
 
@@ -92,7 +92,9 @@ stack traceback:
 ...
 ```
 
+对于 JSON 中的布尔/数字/字符串类型, TinkerJson 会将它们分别转换为 Lua 中对应的的布尔/数字/字符串类型. 其中, 数字会根据其形式被转换为整数或浮点数.
 
+TinkerJson 会将 `null` 转换为 `TinkerJson.null`(而非 Lua 中的 `nil`), 以避免 JSON 中值为 `null` 的键值对在 Lua 中被视作不存在的表项. 在输出时, `TinkerJson.null` 会打印为 `null`.
 
 ## 性能
 
